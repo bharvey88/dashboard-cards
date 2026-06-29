@@ -157,10 +157,13 @@ export function renderDistanceChart(
   const maxMarkers: TemplateResult[] = [];
   const marker = (val: number | undefined, label: string, color: string) => {
     if (val === undefined) return;
+    const px = x(val);
+    // Keep edge labels inside the viewport.
+    const anchor = px > WIDTH - 40 ? "end" : px < 40 ? "start" : "middle";
     maxMarkers.push(svg`
-      <line x1=${x(val)} y1="14" x2=${x(val)} y2=${height - 22} stroke=${color}
+      <line x1=${px} y1="14" x2=${px} y2=${height - 22} stroke=${color}
         stroke-width="2" stroke-dasharray="4 3"></line>
-      <text x=${x(val)} y="12" font-size="10" text-anchor="middle" fill=${color}>${label}</text>`);
+      <text x=${px} y="12" font-size="10" text-anchor=${anchor} fill=${color}>${label}</text>`);
   };
   marker(model.maxStill, "max still", STILL_COLOR);
   marker(model.maxMove, "max move", MOVE_COLOR);
