@@ -7,6 +7,14 @@ import type {
   PanelKey,
 } from "./types";
 import { resolveEntities } from "./entities";
+import {
+  controlRows,
+  zoneConfigRows,
+  gateConfigRows,
+  occupancyRows,
+  presentRows,
+  type Row,
+} from "./panels/entity-rows";
 
 export class ApolloLd2410Card extends LitElement {
   @property({ attribute: false }) public hass?: HomeAssistant;
@@ -45,9 +53,36 @@ export class ApolloLd2410Card extends LitElement {
     `;
   }
 
-  // Filled in by Tasks 5 & 6 (and charts in Plan 2).
   protected _renderPanels(): TemplateResult {
-    return html`${nothing}`;
+    const m = this.entities;
+    const hass = this.hass!;
+    return html`
+      ${this._entitiesPanel("controls", "Controls", presentRows(hass, controlRows(m)))}
+      ${this._entitiesPanel("zone_config", "Zone Config", presentRows(hass, zoneConfigRows(m)))}
+      ${this._entitiesPanel("gate_config", "Gate Config", presentRows(hass, gateConfigRows(m)))}
+      ${this._entitiesPanel("occupancy", "Target / Occupancy", presentRows(hass, occupancyRows(m)))}
+    `;
+  }
+
+  private _entitiesPanel(
+    key: PanelKey,
+    title: string,
+    rows: Row[]
+  ): TemplateResult | typeof nothing {
+    if (!this.panelEnabled(key) || rows.length === 0) return nothing;
+    return html`
+      <div class="panel">
+        <div class="panel-title">${title}</div>
+        ${rows.map(
+          (r) => html`
+            <hui-generic-entity-row
+              .hass=${this.hass}
+              .config=${{ entity: r.entity, name: r.name }}
+            ></hui-generic-entity-row>
+          `
+        )}
+      </div>
+    `;
   }
 
   static styles = css`
