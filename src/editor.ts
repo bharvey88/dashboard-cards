@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing, type TemplateResult } from "lit";
 import { property, state } from "lit/decorators.js";
 import type { HomeAssistant, Ld2410CardConfig, PanelKey } from "./types";
 import { ALL_PANEL_KEYS } from "./types";
+import { VALID_UOMS } from "./charts/unit-convert";
 
 const PANEL_LABELS: Record<PanelKey, string> = {
   controls: "Controls",
@@ -47,6 +48,13 @@ export class ApolloLd2410CardEditor extends LitElement {
     this._emit({ ...this._config, device_id: deviceId });
   }
 
+  public _setUnit(unit: string): void {
+    this._emit({
+      ...this._config,
+      distance_unit: unit as Ld2410CardConfig["distance_unit"],
+    });
+  }
+
   private _onPanelToggle(key: PanelKey, ev: Event): void {
     const value = (ev.target as HTMLInputElement).checked;
     this._emit(toggleEntry(this._config, key, value));
@@ -62,6 +70,21 @@ export class ApolloLd2410CardEditor extends LitElement {
           .label=${"Apollo LD2410 device (MSR-1 / MSR-2)"}
           @value-changed=${(e: CustomEvent) => this._setDevice(e.detail.value)}
         ></ha-device-picker>
+
+        <div class="section-title">Distance unit</div>
+        <select
+          class="unit-select"
+          @change=${(e: Event) =>
+            this._setUnit((e.target as HTMLSelectElement).value)}
+        >
+          ${VALID_UOMS.map(
+            (u) => html`
+              <option value=${u} ?selected=${(this._config.distance_unit ?? "in") === u}>
+                ${u}
+              </option>
+            `
+          )}
+        </select>
 
         <div class="section-title">Panels</div>
         ${ALL_PANEL_KEYS.map(
@@ -99,6 +122,11 @@ export class ApolloLd2410CardEditor extends LitElement {
       color: var(--secondary-text-color);
       font-size: 0.85em;
       margin-top: 8px;
+    }
+    .unit-select {
+      padding: 6px 8px;
+      border-radius: 6px;
+      max-width: 160px;
     }
   `;
 }

@@ -72,4 +72,5 @@ export interface Ld2410CardConfig {
   entities?: Partial<EntityMap>;
   panels?: Partial<Record<PanelKey, boolean>>;
   title?: string;
+  distance_unit?: "mm" | "cm" | "m" | "in" | "ft" | "yd";
 }

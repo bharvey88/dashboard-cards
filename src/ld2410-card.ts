@@ -16,6 +16,9 @@ import {
   type Row,
 } from "./panels/entity-rows";
 import { historyEntities } from "./panels/history";
+import { renderDistanceChart } from "./charts/distance-chart";
+import { renderGateEnergyChart } from "./charts/gate-energy-chart";
+import type { Uom } from "./charts/unit-convert";
 
 export class ApolloLd2410Card extends LitElement {
   @property({ attribute: false }) public hass?: HomeAssistant;
@@ -54,15 +57,43 @@ export class ApolloLd2410Card extends LitElement {
     `;
   }
 
+  private get _unit(): Uom {
+    return (this._config?.distance_unit ?? "in") as Uom;
+  }
+
   protected _renderPanels(): TemplateResult {
     const m = this.entities;
     const hass = this.hass!;
     return html`
+      ${this._chartPanel(
+        "distance_chart",
+        "Distances",
+        renderDistanceChart(hass, m, this._unit)
+      )}
       ${this._entitiesPanel("controls", "Controls", presentRows(hass, controlRows(m)))}
       ${this._entitiesPanel("zone_config", "Zone Config", presentRows(hass, zoneConfigRows(m)))}
+      ${this._chartPanel(
+        "gate_energy_chart",
+        "Gate Energy",
+        renderGateEnergyChart(hass, m)
+      )}
       ${this._entitiesPanel("gate_config", "Gate Config", presentRows(hass, gateConfigRows(m)))}
       ${this._entitiesPanel("occupancy", "Target / Occupancy", presentRows(hass, occupancyRows(m)))}
       ${this._historyPanel()}
+    `;
+  }
+
+  private _chartPanel(
+    key: PanelKey,
+    title: string,
+    content: TemplateResult | typeof nothing
+  ): TemplateResult | typeof nothing {
+    if (!this.panelEnabled(key) || content === nothing) return nothing;
+    return html`
+      <div class="panel">
+        <div class="panel-title">${title}</div>
+        ${content}
+      </div>
     `;
   }
 
@@ -115,6 +146,13 @@ export class ApolloLd2410Card extends LitElement {
       font-weight: 600;
       color: var(--primary-text-color);
       margin: 4px 0;
+    }
+    .chart-legend {
+      font-size: 0.8em;
+      color: var(--secondary-text-color);
+      display: flex;
+      gap: 12px;
+      margin-top: 4px;
     }
   `;
 }

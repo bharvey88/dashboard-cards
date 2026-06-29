@@ -113,8 +113,9 @@ export function renderDistanceChart(
   hass: HomeAssistant,
   m: EntityMap,
   unit: Uom
-): TemplateResult {
+): TemplateResult | typeof nothing {
   const model = distanceModel(hass, m, unit);
+  if (model.bars.length === 0 && model.zones.length === 0) return nothing;
   const x = (v: number) => PAD_L + scaleX(v, model.maxRange, INNER);
   const ticks = gateTicks(model.gateSizeChart, GATE_COUNT, INNER);
 
@@ -163,8 +164,6 @@ export function renderDistanceChart(
   };
   marker(model.maxStill, "max still", STILL_COLOR);
   marker(model.maxMove, "max move", MOVE_COLOR);
-
-  if (model.bars.length === 0 && model.zones.length === 0) return html`${nothing}`;
 
   return html`
     <svg viewBox="0 0 ${WIDTH} ${height}" width="100%" role="img"
