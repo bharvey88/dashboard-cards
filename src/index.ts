@@ -1,5 +1,7 @@
 export const CARD_VERSION = "0.1.0";
 
+import "./ld2410-card";
+
 // eslint-disable-next-line no-console
 console.info(
   `%c APOLLO-DASHBOARD-CARDS %c v${CARD_VERSION} `,
