@@ -15,6 +15,7 @@ import {
   presentRows,
   type Row,
 } from "./panels/entity-rows";
+import { historyEntities } from "./panels/history";
 
 export class ApolloLd2410Card extends LitElement {
   @property({ attribute: false }) public hass?: HomeAssistant;
@@ -61,6 +62,24 @@ export class ApolloLd2410Card extends LitElement {
       ${this._entitiesPanel("zone_config", "Zone Config", presentRows(hass, zoneConfigRows(m)))}
       ${this._entitiesPanel("gate_config", "Gate Config", presentRows(hass, gateConfigRows(m)))}
       ${this._entitiesPanel("occupancy", "Target / Occupancy", presentRows(hass, occupancyRows(m)))}
+      ${this._historyPanel()}
+    `;
+  }
+
+  private _historyPanel(): TemplateResult | typeof nothing {
+    if (!this.panelEnabled("occupancy_history")) return nothing;
+    const ids = historyEntities(this.entities).filter(
+      (id) => id in this.hass!.states
+    );
+    if (ids.length === 0) return nothing;
+    return html`
+      <div class="panel">
+        <div class="panel-title">Occupancy History</div>
+        <history-graph-card
+          .hass=${this.hass}
+          .config=${{ type: "history-graph", hours_to_show: 1, entities: ids }}
+        ></history-graph-card>
+      </div>
     `;
   }
 
