@@ -81,7 +81,7 @@ function cardMap(
   distanceUnit?: string
 ): DeviceCards {
   const m = entityMapFromBaseName(dev.base);
-  const historyIds = historyEntities(m).filter((id) => id in hass.states);
+  const historyRows = historyEntities(m).filter((r) => r.entity in hass.states);
   return {
     controls: entitiesCard("LD2410 Controls", presentRows(hass, controlRows(m))),
     zone: entitiesCard("LD2410 Zone Config", presentRows(hass, zoneConfigRows(m))),
@@ -99,12 +99,12 @@ function cardMap(
       "LD2410 Target / Occupancy",
       presentRows(hass, occupancyRows(m))
     ),
-    history: historyIds.length
+    history: historyRows.length
       ? {
           type: "history-graph",
           title: "LD2410 Occupancy History",
           hours_to_show: 1,
-          entities: historyIds,
+          entities: historyRows,
         }
       : undefined,
   };

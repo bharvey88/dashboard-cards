@@ -1,17 +1,20 @@
 import type { EntityMap } from "../types";
 
-const G = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+export interface HistoryRow {
+  entity: string;
+  name: string;
+}
 
-export function historyEntities(m: EntityMap): string[] {
-  const ids: string[] = [];
-  const push = (id?: string) => id && ids.push(id);
-  push(m.radar_target);
-  push(m.zone_1_occupancy);
-  push(m.zone_2_occupancy);
-  push(m.zone_3_occupancy);
-  for (const n of G) {
-    push(m.move_threshold[n]);
-    push(m.still_threshold[n]);
-  }
-  return ids;
+/** Occupancy history rows with short, readable names (the device prefix would
+ *  otherwise repeat and truncate to the same thing on every row). */
+export function historyEntities(m: EntityMap): HistoryRow[] {
+  const rows: HistoryRow[] = [];
+  const push = (entity: string | undefined, name: string) => {
+    if (entity) rows.push({ entity, name });
+  };
+  push(m.radar_target, "Detected");
+  push(m.zone_1_occupancy, "Zone 1");
+  push(m.zone_2_occupancy, "Zone 2");
+  push(m.zone_3_occupancy, "Zone 3");
+  return rows;
 }

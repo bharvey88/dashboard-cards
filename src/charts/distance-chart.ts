@@ -123,13 +123,14 @@ export function distanceModel(
 }
 
 const WIDTH = 760;
-const LBL = 58;
+const LBL = 66;
 const RPAD = 14;
 const INNER = WIDTH - LBL - RPAD;
 const TOP = 8;
-const ROW_H = 26;
-const BAR_H = ROW_H - 8;
-const AXIS_H = 34;
+const ROW_H = 36;
+const BAR_H = ROW_H - 10;
+const AXIS_H = 40;
+const MID = BAR_H / 2 + 4; // text baseline offset to vertically center in a bar
 
 type Row =
   | { kind: "zones" }
@@ -146,10 +147,10 @@ function rowLabel(r: Row): string {
 
 /** Value label that sits outside a short bar, or inside a long one. */
 function valueLabel(xEnd: number, text: string, y: number) {
-  const inside = xEnd > WIDTH * 0.6;
+  const inside = xEnd > WIDTH * 0.62;
   return inside
-    ? svg`<text x=${xEnd - 5} y=${y + 15} font-size="10" text-anchor="end" fill="#fff">${text}</text>`
-    : svg`<text x=${xEnd + 5} y=${y + 15} font-size="10" fill=${TXT}>${text}</text>`;
+    ? svg`<text x=${xEnd - 6} y=${y + MID} font-size="12" text-anchor="end" fill="#fff">${text}</text>`
+    : svg`<text x=${xEnd + 6} y=${y + MID} font-size="12" fill=${TXT}>${text}</text>`;
 }
 
 export function renderDistanceChart(
@@ -190,24 +191,28 @@ export function renderDistanceChart(
     axis.push(svg`
       <line x1=${gx} y1=${TOP} x2=${gx} y2=${plotBottom}
         stroke="var(--divider-color, #555)" stroke-width="1" opacity="0.3"></line>
-      <text x=${gx} y=${plotBottom + 12} font-size="9" text-anchor="end"
-        transform="rotate(-45 ${gx} ${plotBottom + 12})" fill=${TXT2}>${val.toFixed(0)} ${unit}</text>`);
+      <text x=${gx} y=${plotBottom + 13} font-size="10" text-anchor="end"
+        transform="rotate(-45 ${gx} ${plotBottom + 13})" fill=${TXT2}>${val.toFixed(0)} ${unit}</text>`);
   }
 
   const rowEls = rows.map((r, i) => {
     const y = TOP + i * ROW_H;
-    const label = svg`<text x=${LBL - 6} y=${y + 15} font-size="10"
+    const label = svg`<text x=${LBL - 6} y=${y + MID} font-size="11"
       text-anchor="end" fill=${TXT2}>${rowLabel(r)}</text>`;
 
     if (r.kind === "zones") {
-      const segs = model.zones.map(
-        (z) => svg`
-          <rect x=${x(z.start)} y=${y} width=${Math.max(1, x(z.end) - x(z.start))}
-            height=${BAR_H} rx="3" fill=${z.color} opacity=${z.occupied ? 0.95 : 0.5}></rect>
-          <text x=${x(z.start) + 4} y=${y + 14} font-size="10" fill="#fff">${z.label}${
-            z.occupied ? " ●" : ""
-          }</text>`
-      );
+      const segs = model.zones.map((z) => {
+        const x0 = x(z.start);
+        const x1 = x(z.end);
+        const cx = Math.max(x0 + 10, x1 - 13);
+        return svg`
+          <rect x=${x0} y=${y} width=${Math.max(1, x1 - x0)} height=${BAR_H}
+            rx="4" fill=${z.color} opacity=${z.occupied ? 0.95 : 0.6}></rect>
+          <text x=${(x0 + x1) / 2} y=${y + MID} font-size="13" font-weight="600"
+            text-anchor="middle" fill="#fff">${z.label}</text>
+          <circle cx=${cx} cy=${y + BAR_H / 2} r="6"
+            fill=${z.occupied ? "#fff" : "none"} stroke="#fff" stroke-width="2"></circle>`;
+      });
       return svg`${label}${segs}`;
     }
 
@@ -215,7 +220,7 @@ export function renderDistanceChart(
       const xe = x(r.bar.value);
       return svg`${label}
         <rect x=${LBL} y=${y} width=${Math.max(1, xe - LBL)} height=${BAR_H}
-          rx="3" fill=${r.bar.color}></rect>
+          rx="4" fill=${r.bar.color}></rect>
         ${valueLabel(xe, fmt(r.bar.value), y)}`;
     }
 
@@ -227,19 +232,20 @@ export function renderDistanceChart(
         segs.push(svg`
           <rect x=${x0} y=${y} width=${Math.max(1, x1 - x0)} height=${BAR_H}
             fill=${GATE_COLORS[g]}></rect>
-          <text x=${(x0 + x1) / 2} y=${y + 14} font-size="9" text-anchor="middle"
-            fill="#fff">G${g + 1}</text>`);
+          <text x=${(x0 + x1) / 2} y=${y + MID} font-size="11" font-weight="600"
+            text-anchor="middle" fill="#fff">G${g + 1}</text>`);
       }
       return svg`${label}${segs}`;
     }
 
-    // max bar
+    // max bar — gate count centered, like the reference
     const xe = x(r.value);
     const text = r.gate !== undefined ? `G${r.gate}` : fmt(r.value);
     return svg`${label}
       <rect x=${LBL} y=${y} width=${Math.max(1, xe - LBL)} height=${BAR_H}
-        rx="3" fill=${r.color} opacity="0.55"></rect>
-      ${valueLabel(xe, text, y)}`;
+        rx="4" fill=${r.color} opacity="0.6"></rect>
+      <text x=${(LBL + xe) / 2} y=${y + MID} font-size="12" font-weight="600"
+        text-anchor="middle" fill="#fff">${text}</text>`;
   });
 
   return html`
