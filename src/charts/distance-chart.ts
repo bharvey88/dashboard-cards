@@ -115,12 +115,20 @@ export function renderDistanceChart(
   unit: Uom
 ): TemplateResult | typeof nothing {
   const model = distanceModel(hass, m, unit);
-  if (model.bars.length === 0 && model.zones.length === 0) return nothing;
+  // Live distance bars, then the configured Max Move / Max Still as their own
+  // bars (like the reference dashboard) instead of overlaid vertical markers.
+  const bars: Array<DistanceBar & { dim?: boolean }> = [...model.bars];
+  if (model.maxMove !== undefined)
+    bars.push({ label: "Max Move", value: model.maxMove, color: MOVE_COLOR, dim: true });
+  if (model.maxStill !== undefined)
+    bars.push({ label: "Max Still", value: model.maxStill, color: STILL_COLOR, dim: true });
+
+  if (bars.length === 0 && model.zones.length === 0) return nothing;
   const x = (v: number) => PAD_L + scaleX(v, model.maxRange, INNER);
   const ticks = gateTicks(model.gateSizeChart, GATE_COUNT, INNER);
 
-  const rows = [...model.zones.map((z) => z.label), ...model.bars.map((b) => b.label)];
-  const height = 28 + rows.length * ROW_H + 28;
+  const rowCount = model.zones.length + bars.length;
+  const height = 28 + rowCount * ROW_H + 28;
   let row = 24;
 
   const zoneEls = model.zones.map((z) => {
@@ -136,12 +144,12 @@ export function renderDistanceChart(
       }</text>`;
   });
 
-  const barEls = model.bars.map((b) => {
+  const barEls = bars.map((b) => {
     const y = row;
     row += ROW_H;
     return svg`
       <rect x=${PAD_L} y=${y} width=${Math.max(1, x(b.value) - PAD_L)}
-        height=${ROW_H - 8} rx="3" fill=${b.color}></rect>
+        height=${ROW_H - 8} rx="3" fill=${b.color} opacity=${b.dim ? 0.55 : 1}></rect>
       <text x=${x(b.value) + 4} y=${y + 13} font-size="11"
         fill="var(--primary-text-color)">${b.label} ${b.value.toFixed(1)} ${unit}</text>`;
   });
@@ -154,24 +162,10 @@ export function renderDistanceChart(
         fill="var(--secondary-text-color)">G${i + 1}</text>`
   );
 
-  const maxMarkers: TemplateResult[] = [];
-  const marker = (val: number | undefined, label: string, color: string) => {
-    if (val === undefined) return;
-    const px = x(val);
-    // Keep edge labels inside the viewport.
-    const anchor = px > WIDTH - 40 ? "end" : px < 40 ? "start" : "middle";
-    maxMarkers.push(svg`
-      <line x1=${px} y1="14" x2=${px} y2=${height - 22} stroke=${color}
-        stroke-width="2" stroke-dasharray="4 3"></line>
-      <text x=${px} y="12" font-size="10" text-anchor=${anchor} fill=${color}>${label}</text>`);
-  };
-  marker(model.maxStill, "max still", STILL_COLOR);
-  marker(model.maxMove, "max move", MOVE_COLOR);
-
   return html`
     <svg viewBox="0 0 ${WIDTH} ${height}" width="100%" role="img"
       aria-label="LD2410 distances">
-      ${gateEls} ${zoneEls} ${barEls} ${maxMarkers}
+      ${gateEls} ${zoneEls} ${barEls}
     </svg>
   `;
 }

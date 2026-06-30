@@ -1,7 +1,8 @@
-export const CARD_VERSION = "0.1.1";
+export const CARD_VERSION = "0.2.0";
 
-import "./ld2410-card";
-import "./editor";
+import "./cards/distance-card";
+import "./cards/gate-energy-card";
+import "./strategy";
 
 // eslint-disable-next-line no-console
 console.info(
