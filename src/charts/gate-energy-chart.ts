@@ -50,10 +50,10 @@ export function gateEnergyModel(hass: HomeAssistant, m: EntityMap): GateEnergyMo
   };
 }
 
-const WIDTH = 760;
-const HEIGHT = 240;
-const PAD_L = 28;
-const PAD_B = 22;
+const WIDTH = 470;
+const HEIGHT = 220;
+const PAD_L = 26;
+const PAD_B = 24;
 const PAD_T = 10;
 const PLOT_H = HEIGHT - PAD_B - PAD_T;
 const MAX_ENERGY = 100;
@@ -85,7 +85,7 @@ export function renderGateEnergyChart(
         fill=${MOVE_COLOR}></rect>
       <rect x=${stillX} y=${yFor(g.still)} width=${barW} height=${baseY - yFor(g.still)}
         fill=${STILL_COLOR}></rect>
-      <text x=${cx} y=${HEIGHT - 6} font-size="11" text-anchor="middle"
+      <text x=${cx} y=${HEIGHT - 7} font-size="13" text-anchor="middle"
         fill="var(--secondary-text-color)">G${g.index}</text>`);
     if (model.engineeringMode && g.moveThr !== undefined) {
       els.push(svg`<line x1=${moveX} y1=${yFor(g.moveThr)} x2=${moveX + barW}
@@ -102,7 +102,7 @@ export function renderGateEnergyChart(
     (v) => svg`
       <line x1=${PAD_L} y1=${yFor(v)} x2=${WIDTH} y2=${yFor(v)}
         stroke="var(--divider-color, #888)" stroke-width="1" opacity="0.3"></line>
-      <text x=${PAD_L - 4} y=${yFor(v) + 3} font-size="9" text-anchor="end"
+      <text x=${PAD_L - 4} y=${yFor(v) + 3} font-size="11" text-anchor="end"
         fill="var(--secondary-text-color)">${v}</text>`
   );
 
@@ -113,7 +113,8 @@ export function renderGateEnergyChart(
           fill="var(--card-background-color, #000)" opacity="0.78"></rect>
         <text x=${(WIDTH + PAD_L) / 2} y=${PAD_T + PLOT_H / 2} font-size="13"
           text-anchor="middle" fill="var(--primary-text-color)">
-          Turn on "Radar Engineering Mode" to see gate energy values
+          <tspan x=${(WIDTH + PAD_L) / 2} dy="-6">Turn on "Radar Engineering Mode"</tspan>
+          <tspan x=${(WIDTH + PAD_L) / 2} dy="18">to see gate energy values</tspan>
         </text>`;
 
   return html`

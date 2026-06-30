@@ -122,14 +122,16 @@ export function distanceModel(
   };
 }
 
-const WIDTH = 760;
-const LBL = 66;
-const RPAD = 14;
+// Coordinate space is kept close to the rendered card width so text doesn't
+// shrink when the SVG is scaled to fit.
+const WIDTH = 478;
+const LBL = 64;
+const RPAD = 12;
 const INNER = WIDTH - LBL - RPAD;
-const TOP = 8;
-const ROW_H = 36;
-const BAR_H = ROW_H - 10;
-const AXIS_H = 40;
+const TOP = 6;
+const ROW_H = 30;
+const BAR_H = ROW_H - 8;
+const AXIS_H = 36;
 const MID = BAR_H / 2 + 4; // text baseline offset to vertically center in a bar
 
 type Row =
@@ -149,8 +151,8 @@ function rowLabel(r: Row): string {
 function valueLabel(xEnd: number, text: string, y: number) {
   const inside = xEnd > WIDTH * 0.62;
   return inside
-    ? svg`<text x=${xEnd - 6} y=${y + MID} font-size="12" text-anchor="end" fill="#fff">${text}</text>`
-    : svg`<text x=${xEnd + 6} y=${y + MID} font-size="12" fill=${TXT}>${text}</text>`;
+    ? svg`<text x=${xEnd - 6} y=${y + MID} font-size="13" text-anchor="end" fill="#fff">${text}</text>`
+    : svg`<text x=${xEnd + 6} y=${y + MID} font-size="13" fill=${TXT}>${text}</text>`;
 }
 
 export function renderDistanceChart(
@@ -191,13 +193,13 @@ export function renderDistanceChart(
     axis.push(svg`
       <line x1=${gx} y1=${TOP} x2=${gx} y2=${plotBottom}
         stroke="var(--divider-color, #555)" stroke-width="1" opacity="0.3"></line>
-      <text x=${gx} y=${plotBottom + 13} font-size="10" text-anchor="end"
+      <text x=${gx} y=${plotBottom + 13} font-size="11" text-anchor="end"
         transform="rotate(-45 ${gx} ${plotBottom + 13})" fill=${TXT2}>${val.toFixed(0)} ${unit}</text>`);
   }
 
   const rowEls = rows.map((r, i) => {
     const y = TOP + i * ROW_H;
-    const label = svg`<text x=${LBL - 6} y=${y + MID} font-size="11"
+    const label = svg`<text x=${LBL - 6} y=${y + MID} font-size="12"
       text-anchor="end" fill=${TXT2}>${rowLabel(r)}</text>`;
 
     if (r.kind === "zones") {
@@ -208,7 +210,7 @@ export function renderDistanceChart(
         return svg`
           <rect x=${x0} y=${y} width=${Math.max(1, x1 - x0)} height=${BAR_H}
             rx="4" fill=${z.color} opacity=${z.occupied ? 0.95 : 0.6}></rect>
-          <text x=${(x0 + x1) / 2} y=${y + MID} font-size="13" font-weight="600"
+          <text x=${(x0 + x1) / 2} y=${y + MID} font-size="14" font-weight="600"
             text-anchor="middle" fill="#fff">${z.label}</text>
           <circle cx=${cx} cy=${y + BAR_H / 2} r="6"
             fill=${z.occupied ? "#fff" : "none"} stroke="#fff" stroke-width="2"></circle>`;
@@ -232,7 +234,7 @@ export function renderDistanceChart(
         segs.push(svg`
           <rect x=${x0} y=${y} width=${Math.max(1, x1 - x0)} height=${BAR_H}
             fill=${GATE_COLORS[g]}></rect>
-          <text x=${(x0 + x1) / 2} y=${y + MID} font-size="11" font-weight="600"
+          <text x=${(x0 + x1) / 2} y=${y + MID} font-size="12" font-weight="600"
             text-anchor="middle" fill="#fff">G${g + 1}</text>`);
       }
       return svg`${label}${segs}`;
@@ -244,7 +246,7 @@ export function renderDistanceChart(
     return svg`${label}
       <rect x=${LBL} y=${y} width=${Math.max(1, xe - LBL)} height=${BAR_H}
         rx="4" fill=${r.color} opacity="0.6"></rect>
-      <text x=${(LBL + xe) / 2} y=${y + MID} font-size="12" font-weight="600"
+      <text x=${(LBL + xe) / 2} y=${y + MID} font-size="13" font-weight="600"
         text-anchor="middle" fill="#fff">${text}</text>`;
   });
 
