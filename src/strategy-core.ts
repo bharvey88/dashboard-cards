@@ -76,14 +76,20 @@ function helpCard(dev: RadarDevice): Record<string, any> {
   };
 }
 
+function noteCard(text: string): Record<string, any> {
+  return { type: "markdown", content: text };
+}
+
 interface DeviceCards {
   help: Record<string, any>;
   controls?: Record<string, any>;
   range?: Record<string, any>;
+  rangeNote?: Record<string, any>;
   zone?: Record<string, any>;
   distance: Record<string, any>;
   gateEnergy: Record<string, any>;
   gateConfig?: Record<string, any>;
+  gateNote?: Record<string, any>;
   occupancy?: Record<string, any>;
   history?: Record<string, any>;
 }
@@ -96,13 +102,19 @@ function cardMap(
   const m = dev.profile.entityMap(dev.base);
   const label = dev.profile.label;
   const historyRows = historyEntities(m).filter((r) => r.entity in hass.states);
+  const range = entitiesCard(
+    `${label} Detection Range`,
+    presentRows(hass, rangeRows(m, dev.profile.rangeLabels, dev.profile.gateSizeLabel))
+  );
+  const gateConfig = entitiesCard(
+    `${label} Gate Config`,
+    presentRows(hass, gateConfigRows(m))
+  );
   return {
     help: helpCard(dev),
     controls: entitiesCard(`${label} Controls`, presentRows(hass, controlRows(m))),
-    range: entitiesCard(
-      `${label} Detection Range`,
-      presentRows(hass, rangeRows(m, dev.profile.rangeLabels, dev.profile.gateSizeLabel))
-    ),
+    range,
+    rangeNote: range ? noteCard(dev.profile.rangeTip) : undefined,
     zone: entitiesCard(`${label} Zone Config`, presentRows(hass, zoneConfigRows(m))),
     distance: {
       type: "custom:apollo-radar-distance-card",
@@ -115,7 +127,8 @@ function cardMap(
       device_base_name: dev.base,
       title: `${label} Gate Energy`,
     },
-    gateConfig: entitiesCard(`${label} Gate Config`, presentRows(hass, gateConfigRows(m))),
+    gateConfig,
+    gateNote: gateConfig ? noteCard(dev.profile.gateTip) : undefined,
     occupancy: entitiesCard(
       `${label} Target / Occupancy`,
       presentRows(hass, occupancyRows(m))
@@ -142,10 +155,12 @@ export function buildDeviceCards(
     c.help,
     c.controls,
     c.range,
+    c.rangeNote,
     c.zone,
     c.distance,
     c.gateEnergy,
     c.gateConfig,
+    c.gateNote,
     c.occupancy,
     c.history,
   ].filter(Boolean) as Record<string, any>[];
@@ -161,9 +176,9 @@ export function buildDeviceSections(
   const c = cardMap(hass, dev, distanceUnit);
   const columns: (Record<string, any> | undefined)[][] = [
     [c.help, c.controls, c.zone],
-    [c.distance, c.range, c.history],
+    [c.distance, c.range, c.rangeNote, c.history],
     [c.gateEnergy, c.occupancy],
-    [c.gateConfig],
+    [c.gateConfig, c.gateNote],
   ];
   return columns
     .map((col) => col.filter(Boolean) as Record<string, any>[])

@@ -11,6 +11,10 @@ export interface RadarProfile {
   rangeLabels: [string, string];
   /** Label for the gate-size / distance-resolution select control. */
   gateSizeLabel: string;
+  /** One-line helper note shown under the Detection Range card. */
+  rangeTip: string;
+  /** One-line helper note shown under the Gate Config card. */
+  gateTip: string;
   /** Apollo wiki page for tuning this radar. */
   wikiUrl: string;
   /** Build the entity map for a device base name. */
@@ -46,6 +50,10 @@ export const LD2410_PROFILE: RadarProfile = {
   maxBarLabels: ["Max Move", "Max Still"],
   rangeLabels: ["Max Move Gate", "Max Still Gate"],
   gateSizeLabel: "Gate Size",
+  rangeTip:
+    "💡 **Gate Size** sets how far each gate reaches (e.g. 0.75 m). **Max Move / Still Gate** cap the farthest gate used to detect moving vs. still targets — lower them to ignore distant motion.",
+  gateTip:
+    "💡 Each gate's **move / still threshold** is how strong a signal must be to count as presence at that distance. Lower = more sensitive (more false triggers), higher = less. Turn on **Radar Engineering Mode** and watch the Gate Energy chart while you move around to pick values.",
   wikiUrl: "https://wiki.apolloautomation.com/products/msr2/setup/zones-ha/",
   entityMap(base: string): EntityMap {
     const gates = [0, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -89,6 +97,10 @@ export const LD2412_PROFILE: RadarProfile = {
   maxBarLabels: ["Max Gate", "Min Gate"],
   rangeLabels: ["Max Gate", "Min Gate"],
   gateSizeLabel: "Distance Resolution",
+  rangeTip:
+    "💡 **Distance Resolution** sets gate spacing — smaller (0.5 m) gives finer tuning over a shorter range, larger (0.75 m) reaches farther. **Min / Max Gate** limit which gates are used for detection.",
+  gateTip:
+    "💡 Each gate's **move / still threshold** is how strong a signal must be to count as presence at that distance. Lower = more sensitive (more false triggers), higher = less. Turn on **Radar Engineering Mode** and watch the Gate Energy chart while you move around to pick values.",
   wikiUrl:
     "https://wiki.apolloautomation.com/products/rpro1/setup/zones-ha/#ld2412-configuration",
   entityMap(base: string): EntityMap {
