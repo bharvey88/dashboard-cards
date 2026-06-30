@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Apollo LD2410 Tuning",
+        "description": "This adds an \"MSR Tuning\" dashboard to your sidebar that auto-builds a tuning view for every Apollo MSR (LD2410) device. Select Submit to continue."
+      }
+    },
+    "abort": {
+      "already_configured": "Apollo LD2410 Tuning is already set up."
+    }
+  }
+}

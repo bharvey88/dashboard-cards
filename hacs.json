@@ -1,5 +1,5 @@
 {
-  "name": "Apollo Dashboard Cards",
-  "filename": "apollo-dashboard-cards.js",
-  "render_readme": true
+  "name": "Apollo LD2410 Tuning",
+  "render_readme": true,
+  "homeassistant": "2024.7.0"
 }

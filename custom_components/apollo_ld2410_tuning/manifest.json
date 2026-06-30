@@ -1,0 +1,12 @@
+{
+  "domain": "apollo_ld2410_tuning",
+  "name": "Apollo LD2410 Tuning",
+  "codeowners": ["@bharvey88"],
+  "config_flow": true,
+  "dependencies": ["frontend", "lovelace", "http"],
+  "documentation": "https://github.com/bharvey88/dashboard-cards",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/bharvey88/dashboard-cards/issues",
+  "version": "0.3.0"
+}
