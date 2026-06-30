@@ -4,7 +4,8 @@ import { detectProfile, type RadarProfile } from "./profiles";
 import {
   controlRows,
   zoneConfigRows,
-  gateConfigRows,
+  moveThresholdRows,
+  stillThresholdRows,
   occupancyRows,
   rangeRows,
   presentRows,
@@ -88,7 +89,8 @@ interface DeviceCards {
   zone?: Record<string, any>;
   distance: Record<string, any>;
   gateEnergy: Record<string, any>;
-  gateConfig?: Record<string, any>;
+  moveThr?: Record<string, any>;
+  stillThr?: Record<string, any>;
   gateNote?: Record<string, any>;
   occupancy?: Record<string, any>;
   history?: Record<string, any>;
@@ -106,9 +108,13 @@ function cardMap(
     `${label} Detection Range`,
     presentRows(hass, rangeRows(m, dev.profile.rangeLabels, dev.profile.gateSizeLabel))
   );
-  const gateConfig = entitiesCard(
-    `${label} Gate Config`,
-    presentRows(hass, gateConfigRows(m))
+  const moveThr = entitiesCard(
+    `${label} Move Thresholds`,
+    presentRows(hass, moveThresholdRows(m))
+  );
+  const stillThr = entitiesCard(
+    `${label} Still Thresholds`,
+    presentRows(hass, stillThresholdRows(m))
   );
   return {
     help: helpCard(dev),
@@ -127,8 +133,9 @@ function cardMap(
       device_base_name: dev.base,
       title: `${label} Gate Energy`,
     },
-    gateConfig,
-    gateNote: gateConfig ? noteCard(dev.profile.gateTip) : undefined,
+    moveThr,
+    stillThr,
+    gateNote: moveThr || stillThr ? noteCard(dev.profile.gateTip) : undefined,
     occupancy: entitiesCard(
       `${label} Target / Occupancy`,
       presentRows(hass, occupancyRows(m))
@@ -159,7 +166,8 @@ export function buildDeviceCards(
     c.zone,
     c.distance,
     c.gateEnergy,
-    c.gateConfig,
+    c.moveThr,
+    c.stillThr,
     c.gateNote,
     c.occupancy,
     c.history,
@@ -174,11 +182,13 @@ export function buildDeviceSections(
   distanceUnit?: string
 ): Record<string, any>[] {
   const c = cardMap(hass, dev, distanceUnit);
+  // Move/Still thresholds get their own adjacent columns (3 & 4), aligned at the
+  // top so you can compare them gate-by-gate. Everything else packs into 1 & 2.
   const columns: (Record<string, any> | undefined)[][] = [
-    [c.help, c.controls, c.zone],
-    [c.distance, c.range, c.rangeNote, c.history],
-    [c.gateEnergy, c.occupancy],
-    [c.gateConfig, c.gateNote],
+    [c.help, c.controls, c.zone, c.occupancy],
+    [c.distance, c.range, c.rangeNote, c.gateEnergy, c.history],
+    [c.moveThr, c.gateNote],
+    [c.stillThr],
   ];
   return columns
     .map((col) => col.filter(Boolean) as Record<string, any>[])

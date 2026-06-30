@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   controlRows,
   zoneConfigRows,
-  gateConfigRows,
+  moveThresholdRows,
+  stillThresholdRows,
   rangeRows,
   occupancyRows,
   presentRows,
@@ -20,8 +21,10 @@ describe("row builders", () => {
     expect(ids).toContain(`button.${base}_esp_reboot`);
   });
 
-  it("gate config has 18 threshold rows (9 gates x move/still), no max gates", () => {
-    expect(gateConfigRows(m)).toHaveLength(18);
+  it("splits thresholds into 9 move + 9 still rows (LD2410), labelled by gate", () => {
+    expect(moveThresholdRows(m)).toHaveLength(9);
+    expect(stillThresholdRows(m)).toHaveLength(9);
+    expect(moveThresholdRows(m)[0].name).toBe("G0");
   });
 
   it("zone config has 4 zone bounds (no timeout)", () => {

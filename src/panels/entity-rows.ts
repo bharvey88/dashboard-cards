@@ -43,12 +43,20 @@ export function zoneConfigRows(m: EntityMap): Row[] {
   ];
 }
 
-/** Per-gate move/still threshold sliders (gate count comes from the entity map). */
-export function gateConfigRows(m: EntityMap): Row[] {
+/** Per-gate move thresholds, labelled just by gate (the card title says "Move"). */
+export function moveThresholdRows(m: EntityMap): Row[] {
   const rows: Row[] = [];
   for (let n = 0; n < m.move_threshold.length; n++) {
-    rows.push(...row(m.move_threshold[n], `G${n} move threshold`));
-    rows.push(...row(m.still_threshold[n], `G${n} still threshold`));
+    rows.push(...row(m.move_threshold[n], `G${n}`));
+  }
+  return rows;
+}
+
+/** Per-gate still thresholds. */
+export function stillThresholdRows(m: EntityMap): Row[] {
+  const rows: Row[] = [];
+  for (let n = 0; n < m.still_threshold.length; n++) {
+    rows.push(...row(m.still_threshold[n], `G${n}`));
   }
   return rows;
 }
