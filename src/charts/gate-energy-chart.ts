@@ -117,10 +117,11 @@ export function renderGateEnergyChart(
     : svg`
         <rect x=${PAD_L} y=${PAD_T} width=${WIDTH - PAD_L} height=${PLOT_H}
           fill="var(--card-background-color, #000)" opacity="0.78"></rect>
-        <text x=${(WIDTH + PAD_L) / 2} y=${PAD_T + PLOT_H / 2} font-size="13"
-          text-anchor="middle" fill="var(--primary-text-color)">
-          <tspan x=${(WIDTH + PAD_L) / 2} dy="-6">Turn on "Radar Engineering Mode"</tspan>
-          <tspan x=${(WIDTH + PAD_L) / 2} dy="18">to see gate energy values</tspan>
+        <text x=${(WIDTH + PAD_L) / 2} y=${PAD_T + PLOT_H / 2} font-size="22"
+          font-weight="600" text-anchor="middle" fill="var(--primary-text-color, #e6e6e6)">
+          <tspan x=${(WIDTH + PAD_L) / 2} dy="-12">Turn on "Radar</tspan>
+          <tspan x=${(WIDTH + PAD_L) / 2} dy="26">Engineering Mode"</tspan>
+          <tspan x=${(WIDTH + PAD_L) / 2} dy="26">to see gate energy</tspan>
         </text>`;
 
   return html`
