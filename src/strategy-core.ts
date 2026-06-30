@@ -65,30 +65,41 @@ function entitiesCard(title: string, rows: Row[]): Record<string, any> | undefin
   };
 }
 
-/** The cards that make up one device's tuning view. */
-export function buildDeviceCards(
+interface DeviceCards {
+  controls?: Record<string, any>;
+  zone?: Record<string, any>;
+  distance: Record<string, any>;
+  gateEnergy: Record<string, any>;
+  gateConfig?: Record<string, any>;
+  occupancy?: Record<string, any>;
+  history?: Record<string, any>;
+}
+
+function cardMap(
   hass: HomeAssistant,
   dev: Ld2410Device,
   distanceUnit?: string
-): Record<string, any>[] {
+): DeviceCards {
   const m = entityMapFromBaseName(dev.base);
   const historyIds = historyEntities(m).filter((id) => id in hass.states);
-
-  return [
-    entitiesCard("LD2410 Controls", presentRows(hass, controlRows(m))),
-    entitiesCard("LD2410 Zone Config", presentRows(hass, zoneConfigRows(m))),
-    {
+  return {
+    controls: entitiesCard("LD2410 Controls", presentRows(hass, controlRows(m))),
+    zone: entitiesCard("LD2410 Zone Config", presentRows(hass, zoneConfigRows(m))),
+    distance: {
       type: "custom:apollo-ld2410-distance-card",
       device_base_name: dev.base,
       ...(distanceUnit ? { distance_unit: distanceUnit } : {}),
     },
-    {
+    gateEnergy: {
       type: "custom:apollo-ld2410-gate-energy-card",
       device_base_name: dev.base,
     },
-    entitiesCard("LD2410 Gate Config", presentRows(hass, gateConfigRows(m))),
-    entitiesCard("LD2410 Target / Occupancy", presentRows(hass, occupancyRows(m))),
-    historyIds.length
+    gateConfig: entitiesCard("LD2410 Gate Config", presentRows(hass, gateConfigRows(m))),
+    occupancy: entitiesCard(
+      "LD2410 Target / Occupancy",
+      presentRows(hass, occupancyRows(m))
+    ),
+    history: historyIds.length
       ? {
           type: "history-graph",
           title: "LD2410 Occupancy History",
@@ -96,20 +107,45 @@ export function buildDeviceCards(
           entities: historyIds,
         }
       : undefined,
+  };
+}
+
+/** Flat card list for a device (used by the view strategy / tests). */
+export function buildDeviceCards(
+  hass: HomeAssistant,
+  dev: Ld2410Device,
+  distanceUnit?: string
+): Record<string, any>[] {
+  const c = cardMap(hass, dev, distanceUnit);
+  return [
+    c.controls,
+    c.zone,
+    c.distance,
+    c.gateEnergy,
+    c.gateConfig,
+    c.occupancy,
+    c.history,
   ].filter(Boolean) as Record<string, any>[];
 }
 
-/** Sections for a single device — one card per section so HA's sections view
- *  spreads them across the width (multi-column) instead of one tall column. */
+/** Sections for one device, grouped into the reference 4-column layout so HA's
+ *  sections view spreads them across the width. */
 export function buildDeviceSections(
   hass: HomeAssistant,
   dev: Ld2410Device,
   distanceUnit?: string
 ): Record<string, any>[] {
-  return buildDeviceCards(hass, dev, distanceUnit).map((card) => ({
-    type: "grid",
-    cards: [card],
-  }));
+  const c = cardMap(hass, dev, distanceUnit);
+  const columns: (Record<string, any> | undefined)[][] = [
+    [c.controls, c.zone],
+    [c.distance, c.history],
+    [c.gateEnergy, c.occupancy],
+    [c.gateConfig],
+  ];
+  return columns
+    .map((col) => col.filter(Boolean) as Record<string, any>[])
+    .filter((col) => col.length > 0)
+    .map((cards) => ({ type: "grid", cards }));
 }
 
 /** One full view (a tab) for a single device. */

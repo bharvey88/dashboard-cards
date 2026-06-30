@@ -92,11 +92,11 @@ describe("deviceView", () => {
     });
   });
 
-  it("uses one card per section so cards spread across the view", () => {
+  it("groups cards into multiple column sections so they spread across the view", () => {
     expect(view.sections.length).toBeGreaterThan(1);
     for (const section of view.sections) {
       expect(section.type).toBe("grid");
-      expect(section.cards).toHaveLength(1);
+      expect(section.cards.length).toBeGreaterThanOrEqual(1);
     }
   });
 });

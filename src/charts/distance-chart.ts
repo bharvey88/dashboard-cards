@@ -2,15 +2,29 @@ import { html, svg, nothing, type TemplateResult } from "lit";
 import type { EntityMap, HomeAssistant } from "../types";
 import { convert, type Uom } from "./unit-convert";
 import { numState, uomOf } from "./entity-read";
-import { parseGateSizeMeters, scaleX, gateTicks } from "./geometry";
+import { parseGateSizeMeters, scaleX } from "./geometry";
 
 const DEFAULT_GATE_SIZE_M = 0.75;
 const GATE_COUNT = 8;
 
-const STILL_COLOR = "#274e13";
-const MOVE_COLOR = "#4b0082";
-const DETECTION_COLOR = "#8b0000";
+const STILL_COLOR = "#2e7d32";
+const MOVE_COLOR = "#6a1b9a";
+const DETECTION_COLOR = "#b71c1c";
 const ZONE_COLORS = ["#d32f2f", "#1565c0", "#2e7d32"];
+// Blue -> red rainbow for the gate range row (Portland-ish).
+const GATE_COLORS = [
+  "#3b4cc0",
+  "#2f7fe0",
+  "#22a7bf",
+  "#3fbf6f",
+  "#9bcf3c",
+  "#ecd31a",
+  "#f2992a",
+  "#d83a2a",
+];
+
+const TXT = "var(--primary-text-color, #e6e6e6)";
+const TXT2 = "var(--secondary-text-color, #9aa0a6)";
 
 export interface DistanceBar {
   label: string;
@@ -34,6 +48,8 @@ export interface DistanceModel {
   zones: DistanceZone[];
   maxStill?: number;
   maxMove?: number;
+  maxStillGate?: number;
+  maxMoveGate?: number;
 }
 
 /** Convert an entity's numeric value from its own UOM into the chart unit. */
@@ -63,9 +79,10 @@ export function distanceModel(
     const value = distInUnit(hass, id, unit);
     if (value !== undefined) bars.push({ label, value, color });
   };
-  pushBar(m.still_distance, "Still", STILL_COLOR);
-  pushBar(m.moving_distance, "Moving", MOVE_COLOR);
+  // Order matches the reference: Detection, Moving, Still.
   pushBar(m.detection_distance, "Detection", DETECTION_COLOR);
+  pushBar(m.moving_distance, "Moving", MOVE_COLOR);
+  pushBar(m.still_distance, "Still", STILL_COLOR);
 
   const zones: DistanceZone[] = [];
   const bounds = [
@@ -100,14 +117,40 @@ export function distanceModel(
     zones,
     maxStill: maxStillGate === undefined ? undefined : maxStillGate * gateSizeChart,
     maxMove: maxMoveGate === undefined ? undefined : maxMoveGate * gateSizeChart,
+    maxStillGate,
+    maxMoveGate,
   };
 }
 
 const WIDTH = 760;
-const PAD_L = 8;
-const PAD_R = 8;
-const INNER = WIDTH - PAD_L - PAD_R;
+const LBL = 58;
+const RPAD = 14;
+const INNER = WIDTH - LBL - RPAD;
+const TOP = 8;
 const ROW_H = 26;
+const BAR_H = ROW_H - 8;
+const AXIS_H = 34;
+
+type Row =
+  | { kind: "zones" }
+  | { kind: "bar"; bar: DistanceBar }
+  | { kind: "gates" }
+  | { kind: "max"; label: string; value: number; gate?: number; color: string };
+
+function rowLabel(r: Row): string {
+  if (r.kind === "zones") return "Zones";
+  if (r.kind === "gates") return "Gates";
+  if (r.kind === "bar") return r.bar.label;
+  return r.label;
+}
+
+/** Value label that sits outside a short bar, or inside a long one. */
+function valueLabel(xEnd: number, text: string, y: number) {
+  const inside = xEnd > WIDTH * 0.6;
+  return inside
+    ? svg`<text x=${xEnd - 5} y=${y + 15} font-size="10" text-anchor="end" fill="#fff">${text}</text>`
+    : svg`<text x=${xEnd + 5} y=${y + 15} font-size="10" fill=${TXT}>${text}</text>`;
+}
 
 export function renderDistanceChart(
   hass: HomeAssistant,
@@ -115,57 +158,94 @@ export function renderDistanceChart(
   unit: Uom
 ): TemplateResult | typeof nothing {
   const model = distanceModel(hass, m, unit);
-  // Live distance bars, then the configured Max Move / Max Still as their own
-  // bars (like the reference dashboard) instead of overlaid vertical markers.
-  const bars: Array<DistanceBar & { dim?: boolean }> = [...model.bars];
+  if (
+    model.bars.length === 0 &&
+    model.zones.length === 0 &&
+    model.maxMove === undefined &&
+    model.maxStill === undefined
+  ) {
+    return nothing;
+  }
+
+  const x = (v: number) => LBL + scaleX(v, model.maxRange, INNER);
+  const fmt = (v: number) => `${v.toFixed(1)} ${unit}`;
+
+  const rows: Row[] = [];
+  if (model.zones.length) rows.push({ kind: "zones" });
+  for (const bar of model.bars) rows.push({ kind: "bar", bar });
+  rows.push({ kind: "gates" });
   if (model.maxMove !== undefined)
-    bars.push({ label: "Max Move", value: model.maxMove, color: MOVE_COLOR, dim: true });
+    rows.push({ kind: "max", label: "Max Move", value: model.maxMove, gate: model.maxMoveGate, color: MOVE_COLOR });
   if (model.maxStill !== undefined)
-    bars.push({ label: "Max Still", value: model.maxStill, color: STILL_COLOR, dim: true });
+    rows.push({ kind: "max", label: "Max Still", value: model.maxStill, gate: model.maxStillGate, color: STILL_COLOR });
 
-  if (bars.length === 0 && model.zones.length === 0) return nothing;
-  const x = (v: number) => PAD_L + scaleX(v, model.maxRange, INNER);
-  const ticks = gateTicks(model.gateSizeChart, GATE_COUNT, INNER);
+  const plotBottom = TOP + rows.length * ROW_H;
+  const height = plotBottom + AXIS_H;
 
-  const rowCount = model.zones.length + bars.length;
-  const height = 28 + rowCount * ROW_H + 28;
-  let row = 24;
+  // Gate-boundary gridlines + rotated distance axis labels.
+  const axis: TemplateResult[] = [];
+  for (let i = 0; i <= GATE_COUNT; i++) {
+    const gx = x(model.gateSizeChart * i);
+    const val = model.gateSizeChart * i;
+    axis.push(svg`
+      <line x1=${gx} y1=${TOP} x2=${gx} y2=${plotBottom}
+        stroke="var(--divider-color, #555)" stroke-width="1" opacity="0.3"></line>
+      <text x=${gx} y=${plotBottom + 12} font-size="9" text-anchor="end"
+        transform="rotate(-45 ${gx} ${plotBottom + 12})" fill=${TXT2}>${val.toFixed(0)} ${unit}</text>`);
+  }
 
-  const zoneEls = model.zones.map((z) => {
-    const y = row;
-    row += ROW_H;
-    const x0 = x(z.start);
-    const x1 = x(z.end);
-    return svg`
-      <rect x=${x0} y=${y} width=${Math.max(1, x1 - x0)} height=${ROW_H - 8}
-        rx="3" fill=${z.color} opacity=${z.occupied ? 0.95 : 0.45}></rect>
-      <text x=${x0 + 4} y=${y + 13} font-size="11" fill="#fff">${z.label}${
-        z.occupied ? " ●" : ""
-      }</text>`;
+  const rowEls = rows.map((r, i) => {
+    const y = TOP + i * ROW_H;
+    const label = svg`<text x=${LBL - 6} y=${y + 15} font-size="10"
+      text-anchor="end" fill=${TXT2}>${rowLabel(r)}</text>`;
+
+    if (r.kind === "zones") {
+      const segs = model.zones.map(
+        (z) => svg`
+          <rect x=${x(z.start)} y=${y} width=${Math.max(1, x(z.end) - x(z.start))}
+            height=${BAR_H} rx="3" fill=${z.color} opacity=${z.occupied ? 0.95 : 0.5}></rect>
+          <text x=${x(z.start) + 4} y=${y + 14} font-size="10" fill="#fff">${z.label}${
+            z.occupied ? " ●" : ""
+          }</text>`
+      );
+      return svg`${label}${segs}`;
+    }
+
+    if (r.kind === "bar") {
+      const xe = x(r.bar.value);
+      return svg`${label}
+        <rect x=${LBL} y=${y} width=${Math.max(1, xe - LBL)} height=${BAR_H}
+          rx="3" fill=${r.bar.color}></rect>
+        ${valueLabel(xe, fmt(r.bar.value), y)}`;
+    }
+
+    if (r.kind === "gates") {
+      const segs = [];
+      for (let g = 0; g < GATE_COUNT; g++) {
+        const x0 = x(model.gateSizeChart * g);
+        const x1 = x(model.gateSizeChart * (g + 1));
+        segs.push(svg`
+          <rect x=${x0} y=${y} width=${Math.max(1, x1 - x0)} height=${BAR_H}
+            fill=${GATE_COLORS[g]}></rect>
+          <text x=${(x0 + x1) / 2} y=${y + 14} font-size="9" text-anchor="middle"
+            fill="#fff">G${g + 1}</text>`);
+      }
+      return svg`${label}${segs}`;
+    }
+
+    // max bar
+    const xe = x(r.value);
+    const text = r.gate !== undefined ? `G${r.gate}` : fmt(r.value);
+    return svg`${label}
+      <rect x=${LBL} y=${y} width=${Math.max(1, xe - LBL)} height=${BAR_H}
+        rx="3" fill=${r.color} opacity="0.55"></rect>
+      ${valueLabel(xe, text, y)}`;
   });
-
-  const barEls = bars.map((b) => {
-    const y = row;
-    row += ROW_H;
-    return svg`
-      <rect x=${PAD_L} y=${y} width=${Math.max(1, x(b.value) - PAD_L)}
-        height=${ROW_H - 8} rx="3" fill=${b.color} opacity=${b.dim ? 0.55 : 1}></rect>
-      <text x=${x(b.value) + 4} y=${y + 13} font-size="11"
-        fill="var(--primary-text-color)">${b.label} ${b.value.toFixed(1)} ${unit}</text>`;
-  });
-
-  const gateEls = ticks.map(
-    (tx, i) => svg`
-      <line x1=${PAD_L + tx} y1="18" x2=${PAD_L + tx} y2=${height - 22}
-        stroke="var(--divider-color, #888)" stroke-width="1" opacity="0.5"></line>
-      <text x=${PAD_L + tx} y=${height - 8} font-size="10" text-anchor="middle"
-        fill="var(--secondary-text-color)">G${i + 1}</text>`
-  );
 
   return html`
     <svg viewBox="0 0 ${WIDTH} ${height}" width="100%" role="img"
       aria-label="LD2410 distances">
-      ${gateEls} ${zoneEls} ${barEls}
+      ${axis} ${rowEls}
     </svg>
   `;
 }
