@@ -126,6 +126,11 @@ export function renderGateEnergyChart(
   return html`
     <svg viewBox="0 0 ${WIDTH} ${HEIGHT}" width="100%" role="img"
       aria-label="LD2410 gate energy">
+      <title>
+        Per-gate signal energy (bars) vs your thresholds (triangles). A gate
+        detects a target when its energy rises above the threshold. Turn on
+        Radar Engineering Mode to see live energy.
+      </title>
       ${gridlines} ${bars} ${overlay}
     </svg>
     <div class="chart-legend">

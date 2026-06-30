@@ -11,17 +11,11 @@ const STILL_COLOR = "#2e7d32";
 const MOVE_COLOR = "#6a1b9a";
 const DETECTION_COLOR = "#b71c1c";
 const ZONE_COLORS = ["#d32f2f", "#1565c0", "#2e7d32"];
-// Blue -> red rainbow for the gate range row (Portland-ish).
-const GATE_COLORS = [
-  "#3b4cc0",
-  "#2f7fe0",
-  "#22a7bf",
-  "#3fbf6f",
-  "#9bcf3c",
-  "#ecd31a",
-  "#f2992a",
-  "#d83a2a",
-];
+/** Blue -> red rainbow for gate `i` of `count` (works for any gate count). */
+function gateColor(i: number, count: number): string {
+  const hue = 220 - (220 * i) / Math.max(1, count - 1);
+  return `hsl(${hue}, 64%, 48%)`;
+}
 
 const TXT = "var(--primary-text-color, #e6e6e6)";
 const TXT2 = "var(--secondary-text-color, #9aa0a6)";
@@ -153,6 +147,21 @@ function rowLabel(r: Row): string {
   return r.label;
 }
 
+/** Hover-tooltip text (rendered as an SVG <title>) explaining each row. */
+function rowTip(r: Row): string {
+  if (r.kind === "zones")
+    return "Detection zones. The circle shows whether a target is currently in each zone (filled = present).";
+  if (r.kind === "gates")
+    return "The radar splits its range into gates — each colored segment is one distance bin (G1, G2, ...).";
+  if (r.kind === "max")
+    return `${r.label}: the configured detection-range limit, shown as a gate number.`;
+  if (r.bar.label === "Detection")
+    return "Current distance to the detected target.";
+  if (r.bar.label === "Moving")
+    return "Current distance to a moving target.";
+  return "Current distance to a still (stationary) target.";
+}
+
 /** Value label that sits outside a short bar, or inside a long one. */
 function valueLabel(xEnd: number, text: string, y: number) {
   const inside = xEnd > WIDTH * 0.62;
@@ -167,15 +176,11 @@ export function renderDistanceChart(
   unit: Uom,
   maxLabels: [string, string] = ["Max Move", "Max Still"]
 ): TemplateResult | typeof nothing {
+  // Only bail when there's no device at all. A configured radar always has a
+  // gate setup, so the chart renders (Gates row + axis) even if the optional
+  // distance sensors are disabled — it just won't show those bars.
+  if (m.move_threshold.length === 0) return nothing;
   const model = distanceModel(hass, m, unit);
-  if (
-    model.bars.length === 0 &&
-    model.zones.length === 0 &&
-    model.maxMove === undefined &&
-    model.maxStill === undefined
-  ) {
-    return nothing;
-  }
 
   const x = (v: number) => LBL + scaleX(v, model.maxRange, INNER);
   const fmt = (v: number) => `${v.toFixed(1)} ${unit}`;
@@ -209,8 +214,9 @@ export function renderDistanceChart(
     const label = svg`<text x=${LBL - 6} y=${y + MID} font-size="12"
       text-anchor="end" fill=${TXT2}>${rowLabel(r)}</text>`;
 
+    let content;
     if (r.kind === "zones") {
-      const segs = model.zones.map((z, idx) => {
+      content = model.zones.map((z, idx) => {
         const x0 = x(z.start);
         const x1 = x(z.end);
         const w = x1 - x0;
@@ -227,39 +233,41 @@ export function renderDistanceChart(
           <circle cx=${x1 - 11} cy=${y + BAR_H / 2} r="5"
             fill=${z.occupied ? "#fff" : "none"} stroke="#fff" stroke-width="2"></circle>`;
       });
-      return svg`${label}${segs}`;
-    }
-
-    if (r.kind === "bar") {
+    } else if (r.kind === "bar") {
       const xe = x(r.bar.value);
-      return svg`${label}
+      content = svg`
         <rect x=${LBL} y=${y} width=${Math.max(1, xe - LBL)} height=${BAR_H}
           rx="4" fill=${r.bar.color}></rect>
         ${valueLabel(xe, fmt(r.bar.value), y)}`;
-    }
-
-    if (r.kind === "gates") {
+    } else if (r.kind === "gates") {
       const segs = [];
       for (let g = 0; g < model.gateCount; g++) {
         const x0 = x(model.gateSizeChart * g);
         const x1 = x(model.gateSizeChart * (g + 1));
         segs.push(svg`
           <rect x=${x0} y=${y} width=${Math.max(1, x1 - x0)} height=${BAR_H}
-            fill=${GATE_COLORS[g]}></rect>
+            fill=${gateColor(g, model.gateCount)}></rect>
           <text x=${(x0 + x1) / 2} y=${y + MID} font-size="12" font-weight="600"
             text-anchor="middle" fill="#fff">G${g + 1}</text>`);
       }
-      return svg`${label}${segs}`;
+      content = segs;
+    } else {
+      // max bar — gate count centered, like the reference
+      const xe = x(r.value);
+      const text = r.gate !== undefined ? `G${r.gate}` : fmt(r.value);
+      content = svg`
+        <rect x=${LBL} y=${y} width=${Math.max(1, xe - LBL)} height=${BAR_H}
+          rx="4" fill=${r.color} opacity="0.6"></rect>
+        <text x=${(LBL + xe) / 2} y=${y + MID} font-size="13" font-weight="600"
+          text-anchor="middle" fill="#fff">${text}</text>`;
     }
 
-    // max bar — gate count centered, like the reference
-    const xe = x(r.value);
-    const text = r.gate !== undefined ? `G${r.gate}` : fmt(r.value);
-    return svg`${label}
-      <rect x=${LBL} y=${y} width=${Math.max(1, xe - LBL)} height=${BAR_H}
-        rx="4" fill=${r.color} opacity="0.6"></rect>
-      <text x=${(LBL + xe) / 2} y=${y + MID} font-size="13" font-weight="600"
-        text-anchor="middle" fill="#fff">${text}</text>`;
+    // Wrap the whole row so an SVG <title> tooltip shows on hover anywhere in it.
+    return svg`<g>
+      <title>${rowTip(r)}</title>
+      <rect x="0" y=${y} width=${WIDTH} height=${BAR_H} fill="transparent"></rect>
+      ${label}${content}
+    </g>`;
   });
 
   return html`
