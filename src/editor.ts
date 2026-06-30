@@ -14,6 +14,21 @@ const PANEL_LABELS: Record<PanelKey, string> = {
   occupancy_history: "Occupancy History",
 };
 
+/** HA lazy-loads form/picker components. Force them to register by creating an
+ *  entities-card config element, so <ha-form> + its device selector exist. */
+async function ensureHaFormLoaded(): Promise<void> {
+  if (customElements.get("ha-form") && customElements.get("ha-selector")) return;
+  const helpers = await (window as any).loadCardHelpers?.();
+  if (!helpers) return;
+  const card = await helpers.createCardElement({ type: "entities", entities: [] });
+  if (!card) return;
+  await (card.constructor as any)?.getConfigElement?.();
+}
+
+const DEVICE_SCHEMA = [
+  { name: "device_id", selector: { device: {} } },
+] as const;
+
 export function toggleEntry(
   config: Ld2410CardConfig,
   key: PanelKey,
@@ -30,6 +45,11 @@ export class ApolloLd2410CardEditor extends LitElement {
 
   public setConfig(config: Ld2410CardConfig): void {
     this._config = config;
+  }
+
+  public connectedCallback(): void {
+    super.connectedCallback();
+    ensureHaFormLoaded().then(() => this.requestUpdate());
   }
 
   private _emit(config: Ld2410CardConfig): void {
@@ -55,6 +75,15 @@ export class ApolloLd2410CardEditor extends LitElement {
     });
   }
 
+  private _onFormChanged(ev: CustomEvent): void {
+    this._emit({ ...this._config, ...ev.detail.value });
+  }
+
+  private _computeLabel = (schema: { name: string }): string =>
+    schema.name === "device_id"
+      ? "Apollo LD2410 device (MSR-1 / MSR-2)"
+      : schema.name;
+
   private _onPanelToggle(key: PanelKey, ev: Event): void {
     const value = (ev.target as HTMLInputElement).checked;
     this._emit(toggleEntry(this._config, key, value));
@@ -64,12 +93,13 @@ export class ApolloLd2410CardEditor extends LitElement {
     if (!this.hass) return nothing;
     return html`
       <div class="editor">
-        <ha-device-picker
+        <ha-form
           .hass=${this.hass}
-          .value=${this._config.device_id ?? ""}
-          .label=${"Apollo LD2410 device (MSR-1 / MSR-2)"}
-          @value-changed=${(e: CustomEvent) => this._setDevice(e.detail.value)}
-        ></ha-device-picker>
+          .data=${this._config}
+          .schema=${DEVICE_SCHEMA}
+          .computeLabel=${this._computeLabel}
+          @value-changed=${this._onFormChanged}
+        ></ha-form>
 
         <div class="section-title">Distance unit</div>
         <select
@@ -99,8 +129,9 @@ export class ApolloLd2410CardEditor extends LitElement {
         )}
 
         <div class="hint">
-          For non-Apollo LD2410 devices, set <code>device_base_name</code> or map
-          entities manually in the code editor (YAML).
+          No device dropdown? Pick your MSR-1 / MSR-2 above. For non-Apollo LD2410
+          devices, set <code>device_base_name</code> or map entities manually in the
+          code editor (YAML).
         </div>
       </div>
     `;
