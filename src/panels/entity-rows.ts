@@ -6,8 +6,6 @@ export interface Row {
   name: string;
 }
 
-const G = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-
 function row(entity: string | undefined, name: string): Row[] {
   return entity ? [{ entity, name }] : [];
 }
@@ -15,16 +13,24 @@ function row(entity: string | undefined, name: string): Row[] {
 export function controlRows(m: EntityMap): Row[] {
   return [
     ...row(m.engineering_mode, "Radar Engineering Mode"),
-    ...row(m.bluetooth, "LD2410 Bluetooth"),
+    ...row(m.bluetooth, "Bluetooth"),
     ...row(m.restart_radar, "Restart Radar"),
     ...row(m.factory_reset_radar, "Factory Reset Radar"),
     ...row(m.esp_reboot, "ESP Reboot"),
   ];
 }
 
-export function zoneConfigRows(m: EntityMap): Row[] {
+/** Detection range / timeout — kept separate from the gate-threshold sliders. */
+export function rangeRows(m: EntityMap, maxLabels: [string, string]): Row[] {
   return [
     ...row(m.radar_timeout, "Radar Timeout"),
+    ...row(m.max_move_distance, `${maxLabels[0]} Gate`),
+    ...row(m.max_still_distance, `${maxLabels[1]} Gate`),
+  ];
+}
+
+export function zoneConfigRows(m: EntityMap): Row[] {
+  return [
     ...row(m.zone_1_start, "Start Zone 1"),
     ...row(m.end_zone_1, "End Zone 1"),
     ...row(m.end_zone_2, "End Zone 2"),
@@ -32,12 +38,10 @@ export function zoneConfigRows(m: EntityMap): Row[] {
   ];
 }
 
+/** Per-gate move/still threshold sliders (gate count comes from the entity map). */
 export function gateConfigRows(m: EntityMap): Row[] {
-  const rows: Row[] = [
-    ...row(m.max_move_distance, "Max Move Gate"),
-    ...row(m.max_still_distance, "Max Still Gate"),
-  ];
-  for (const n of G) {
+  const rows: Row[] = [];
+  for (let n = 0; n < m.move_threshold.length; n++) {
     rows.push(...row(m.move_threshold[n], `G${n} move threshold`));
     rows.push(...row(m.still_threshold[n], `G${n} still threshold`));
   }

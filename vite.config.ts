@@ -6,7 +6,7 @@ export default defineConfig({
     lib: {
       entry: "src/index.ts",
       formats: ["es"],
-      fileName: () => "apollo-dashboard-cards.js",
+      fileName: () => "apollo-radar-tuning.js",
     },
     rollupOptions: { output: { inlineDynamicImports: true } },
     minify: "terser",

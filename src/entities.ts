@@ -1,10 +1,16 @@
 import type { EntityMap, HomeAssistant, Ld2410CardConfig } from "./types";
+import {
+  LD2410_PROFILE,
+  detectProfile,
+  type RadarProfile,
+} from "./profiles";
 
-const GATES = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-
-/** Known LD2410 entity-name suffixes (everything after the device base name).
+/** Known radar entity-name suffixes (everything after the device base name).
  *  Stripping one of these from an entity's object_id yields the base name. */
 const KNOWN_SUFFIXES: RegExp[] = [
+  // LD2412 — every entity is `{base}_ld2412_...`, so one pattern covers all.
+  /_ld2412_.+$/,
+  // LD2410 (MSR) — varied prefixes.
   /_radar_engineering_mode$/,
   /_ld2410_bluetooth$/,
   /_restart_radar$/,
@@ -44,8 +50,6 @@ export function baseNameFromDevice(
     .filter(([, e]) => e.device_id === deviceId)
     .map(([id]) => id.slice(id.indexOf(".") + 1));
 
-  // Strip a known LD2410 suffix from each entity; the base name is the most
-  // common result (unrelated entities like wifi/uptime contribute nothing).
   const counts = new Map<string, number>();
   for (const oid of objectIds) {
     const base = baseFromObjectId(oid);
@@ -62,36 +66,29 @@ export function baseNameFromDevice(
   return best;
 }
 
+/** LD2410 entity map for a base name — kept as a named export for tests. */
 export function entityMapFromBaseName(base: string): EntityMap {
-  const g = (suffix: (n: number) => string) => GATES.map((n) => suffix(n));
-  return {
-    engineering_mode: `switch.${base}_radar_engineering_mode`,
-    bluetooth: `switch.${base}_ld2410_bluetooth`,
-    restart_radar: `button.${base}_restart_radar`,
-    factory_reset_radar: `button.${base}_factory_reset_radar`,
-    esp_reboot: `button.${base}_esp_reboot`,
-    radar_timeout: `number.${base}_radar_timeout`,
-    zone_1_start: `number.${base}_radar_zone_1_start`,
-    end_zone_1: `number.${base}_radar_end_zone_1`,
-    end_zone_2: `number.${base}_radar_end_zone_2`,
-    end_zone_3: `number.${base}_radar_end_zone_3`,
-    max_move_distance: `number.${base}_radar_max_move_distance`,
-    max_still_distance: `number.${base}_radar_max_still_distance`,
-    gate_size: `select.${base}_ld2410_gate_size`,
-    move_threshold: g((n) => `number.${base}_g${n}_move_threshold`),
-    still_threshold: g((n) => `number.${base}_g${n}_still_threshold`),
-    move_energy: g((n) => `sensor.${base}_g${n}_move_energy`),
-    still_energy: g((n) => `sensor.${base}_g${n}_still_energy`),
-    still_distance: `sensor.${base}_radar_still_distance`,
-    moving_distance: `sensor.${base}_radar_moving_distance`,
-    detection_distance: `sensor.${base}_radar_detection_distance`,
-    radar_target: `binary_sensor.${base}_radar_target`,
-    moving_target: `binary_sensor.${base}_radar_moving_target`,
-    still_target: `binary_sensor.${base}_radar_still_target`,
-    zone_1_occupancy: `binary_sensor.${base}_radar_zone_1_occupancy`,
-    zone_2_occupancy: `binary_sensor.${base}_radar_zone_2_occupancy`,
-    zone_3_occupancy: `binary_sensor.${base}_radar_zone_3_occupancy`,
-  };
+  return LD2410_PROFILE.entityMap(base);
+}
+
+function resolveBase(
+  hass: HomeAssistant,
+  config: Ld2410CardConfig
+): string | undefined {
+  let base: string | undefined;
+  if (config.device_id) base = baseNameFromDevice(hass, config.device_id);
+  if (!base && config.device_base_name) base = config.device_base_name;
+  return base;
+}
+
+/** Detect the radar profile for a configured device (defaults to LD2410). */
+export function resolveProfile(
+  hass: HomeAssistant,
+  config: Ld2410CardConfig
+): RadarProfile | undefined {
+  const base = resolveBase(hass, config);
+  if (!base) return undefined;
+  return detectProfile(hass, base) ?? LD2410_PROFILE;
 }
 
 function emptyMap(): EntityMap {
@@ -107,12 +104,9 @@ export function resolveEntities(
   hass: HomeAssistant,
   config: Ld2410CardConfig
 ): EntityMap {
-  let base: string | undefined;
-  if (config.device_id) base = baseNameFromDevice(hass, config.device_id);
-  if (!base && config.device_base_name) base = config.device_base_name;
-
-  const resolved = base ? entityMapFromBaseName(base) : emptyMap();
-
+  const base = resolveBase(hass, config);
+  const profile = base ? detectProfile(hass, base) ?? LD2410_PROFILE : undefined;
+  const resolved = base && profile ? profile.entityMap(base) : emptyMap();
   if (config.entities) {
     return { ...resolved, ...config.entities } as EntityMap;
   }

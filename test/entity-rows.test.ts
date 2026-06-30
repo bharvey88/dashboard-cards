@@ -3,6 +3,7 @@ import {
   controlRows,
   zoneConfigRows,
   gateConfigRows,
+  rangeRows,
   occupancyRows,
   presentRows,
 } from "../src/panels/entity-rows";
@@ -19,12 +20,18 @@ describe("row builders", () => {
     expect(ids).toContain(`button.${base}_esp_reboot`);
   });
 
-  it("gate config has 2 maxes + 18 thresholds = 20 rows", () => {
-    expect(gateConfigRows(m)).toHaveLength(20);
+  it("gate config has 18 threshold rows (9 gates x move/still), no max gates", () => {
+    expect(gateConfigRows(m)).toHaveLength(18);
   });
 
-  it("zone config has timeout + 4 zone bounds = 5 rows", () => {
-    expect(zoneConfigRows(m)).toHaveLength(5);
+  it("zone config has 4 zone bounds (no timeout)", () => {
+    expect(zoneConfigRows(m)).toHaveLength(4);
+  });
+
+  it("range card has timeout + max move/still gates with profile labels", () => {
+    const rows = rangeRows(m, ["Max Move", "Max Still"]);
+    const names = rows.map((r) => r.name);
+    expect(names).toEqual(["Radar Timeout", "Max Move Gate", "Max Still Gate"]);
   });
 
   it("occupancy has target/moving/still + 3 zones = 6 rows", () => {

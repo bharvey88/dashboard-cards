@@ -6,13 +6,13 @@ import {
 } from "./strategy-core";
 
 const EMPTY_VIEW = {
-  title: "MSR Tuning",
+  title: "Apollo Radar Tuning",
   cards: [
     {
       type: "markdown",
       content:
-        "No Apollo MSR (LD2410) devices found. Make sure your MSR-1/MSR-2 is " +
-        "added to Home Assistant.",
+        "No Apollo radar devices found. Make sure your MSR (LD2410) or R-PRO " +
+        "(LD2412) is added to Home Assistant.",
     },
   ],
 };
@@ -21,7 +21,7 @@ const EMPTY_VIEW = {
  * View strategy: turns a single view into an auto-generated LD2410 tuning view.
  * Usage in a view config:
  *   strategy:
- *     type: custom:apollo-ld2410-tuning
+ *     type: custom:apollo-radar-tuning
  */
 class ApolloLd2410ViewStrategy extends HTMLElement {
   static async generate(
@@ -36,7 +36,7 @@ class ApolloLd2410ViewStrategy extends HTMLElement {
  * Dashboard strategy: builds a whole dashboard (one "Tuning" view with a
  * section per MSR device). Usage in a dashboard config:
  *   strategy:
- *     type: custom:apollo-ld2410-tuning
+ *     type: custom:apollo-radar-tuning
  */
 class ApolloLd2410DashboardStrategy extends HTMLElement {
   static async generate(
@@ -45,21 +45,21 @@ class ApolloLd2410DashboardStrategy extends HTMLElement {
   ): Promise<Record<string, any>> {
     const views = generateViews(hass, config);
     return {
-      title: "MSR Tuning",
+      title: "Apollo Radar Tuning",
       views: views.length ? views : [EMPTY_VIEW],
     };
   }
 }
 
-if (!customElements.get("ll-strategy-view-apollo-ld2410-tuning")) {
+if (!customElements.get("ll-strategy-view-apollo-radar-tuning")) {
   customElements.define(
-    "ll-strategy-view-apollo-ld2410-tuning",
+    "ll-strategy-view-apollo-radar-tuning",
     ApolloLd2410ViewStrategy
   );
 }
-if (!customElements.get("ll-strategy-dashboard-apollo-ld2410-tuning")) {
+if (!customElements.get("ll-strategy-dashboard-apollo-radar-tuning")) {
   customElements.define(
-    "ll-strategy-dashboard-apollo-ld2410-tuning",
+    "ll-strategy-dashboard-apollo-radar-tuning",
     ApolloLd2410DashboardStrategy
   );
 }
@@ -69,15 +69,15 @@ if (!customElements.get("ll-strategy-dashboard-apollo-ld2410-tuning")) {
 (window as any).customStrategies = (window as any).customStrategies || [];
 if (
   !(window as any).customStrategies.some(
-    (s: { type?: string }) => s.type === "apollo-ld2410-tuning"
+    (s: { type?: string }) => s.type === "apollo-radar-tuning"
   )
 ) {
   (window as any).customStrategies.push({
-    type: "apollo-ld2410-tuning",
+    type: "apollo-radar-tuning",
     strategyType: "dashboard",
-    name: "Apollo MSR Tuning",
+    name: "Apollo Radar Tuning",
     description:
-      "Auto-built tuning dashboard for Apollo MSR (LD2410) radar devices.",
+      "Auto-built tuning dashboard for Apollo radar devices (MSR / LD2410, R-PRO / LD2412).",
     documentationURL: "https://github.com/bharvey88/dashboard-cards",
   });
 }

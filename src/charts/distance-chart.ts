@@ -43,6 +43,7 @@ export interface DistanceZone {
 export interface DistanceModel {
   unit: Uom;
   gateSizeChart: number;
+  gateCount: number;
   maxRange: number;
   bars: DistanceBar[];
   zones: DistanceZone[];
@@ -72,12 +73,16 @@ export function distanceModel(
     parseGateSizeMeters(m.gate_size ? hass.states[m.gate_size]?.state : undefined) ??
     DEFAULT_GATE_SIZE_M;
   const gateSizeChart = convert(gateSizeM, "m", unit);
-  const maxRange = gateSizeChart * GATE_COUNT;
+  const gateCount =
+    m.move_threshold.length > 1 ? m.move_threshold.length - 1 : GATE_COUNT;
+  const maxRange = gateSizeChart * gateCount;
 
   const bars: DistanceBar[] = [];
   const pushBar = (id: string | undefined, label: string, color: string) => {
-    const value = distInUnit(hass, id, unit);
-    if (value !== undefined) bars.push({ label, value, color });
+    // Keep the row whenever the entity exists; show 0 when there's no target
+    // (the distance sensors read non-numeric / unavailable with no target).
+    if (!id || !(id in hass.states)) return;
+    bars.push({ label, value: distInUnit(hass, id, unit) ?? 0, color });
   };
   // Order matches the reference: Detection, Moving, Still.
   pushBar(m.detection_distance, "Detection", DETECTION_COLOR);
@@ -112,6 +117,7 @@ export function distanceModel(
   return {
     unit,
     gateSizeChart,
+    gateCount,
     maxRange,
     bars,
     zones,
@@ -158,7 +164,8 @@ function valueLabel(xEnd: number, text: string, y: number) {
 export function renderDistanceChart(
   hass: HomeAssistant,
   m: EntityMap,
-  unit: Uom
+  unit: Uom,
+  maxLabels: [string, string] = ["Max Move", "Max Still"]
 ): TemplateResult | typeof nothing {
   const model = distanceModel(hass, m, unit);
   if (
@@ -178,16 +185,16 @@ export function renderDistanceChart(
   for (const bar of model.bars) rows.push({ kind: "bar", bar });
   rows.push({ kind: "gates" });
   if (model.maxMove !== undefined)
-    rows.push({ kind: "max", label: "Max Move", value: model.maxMove, gate: model.maxMoveGate, color: MOVE_COLOR });
+    rows.push({ kind: "max", label: maxLabels[0], value: model.maxMove, gate: model.maxMoveGate, color: MOVE_COLOR });
   if (model.maxStill !== undefined)
-    rows.push({ kind: "max", label: "Max Still", value: model.maxStill, gate: model.maxStillGate, color: STILL_COLOR });
+    rows.push({ kind: "max", label: maxLabels[1], value: model.maxStill, gate: model.maxStillGate, color: STILL_COLOR });
 
   const plotBottom = TOP + rows.length * ROW_H;
   const height = plotBottom + AXIS_H;
 
   // Gate-boundary gridlines + rotated distance axis labels.
   const axis: TemplateResult[] = [];
-  for (let i = 0; i <= GATE_COUNT; i++) {
+  for (let i = 0; i <= model.gateCount; i++) {
     const gx = x(model.gateSizeChart * i);
     const val = model.gateSizeChart * i;
     axis.push(svg`
@@ -233,7 +240,7 @@ export function renderDistanceChart(
 
     if (r.kind === "gates") {
       const segs = [];
-      for (let g = 0; g < GATE_COUNT; g++) {
+      for (let g = 0; g < model.gateCount; g++) {
         const x0 = x(model.gateSizeChart * g);
         const x1 = x(model.gateSizeChart * (g + 1));
         segs.push(svg`

@@ -17,7 +17,7 @@ export class ApolloLd2410GateEnergyCard extends LitElement {
   }
 
   static getStubConfig(): Ld2410CardConfig {
-    return { type: "custom:apollo-ld2410-gate-energy-card" };
+    return { type: "custom:apollo-radar-gate-energy-card" };
   }
 
   protected render(): TemplateResult | typeof nothing {
@@ -47,14 +47,14 @@ export class ApolloLd2410GateEnergyCard extends LitElement {
   `;
 }
 
-if (!customElements.get("apollo-ld2410-gate-energy-card")) {
-  customElements.define("apollo-ld2410-gate-energy-card", ApolloLd2410GateEnergyCard);
+if (!customElements.get("apollo-radar-gate-energy-card")) {
+  customElements.define("apollo-radar-gate-energy-card", ApolloLd2410GateEnergyCard);
 }
 
 (window as any).customCards = (window as any).customCards || [];
 (window as any).customCards.push({
-  type: "apollo-ld2410-gate-energy-card",
-  name: "Apollo LD2410 Gate Energy Chart",
-  description: "LD2410 per-gate move/still energy chart for Apollo MSR devices.",
+  type: "apollo-radar-gate-energy-card",
+  name: "Apollo Radar Gate Energy Chart",
+  description: "Per-gate move/still energy chart for Apollo MSR (LD2410) & R-PRO (LD2412).",
   documentationURL: "https://github.com/ApolloAutomation/dashboard-cards",
 });

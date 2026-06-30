@@ -2,7 +2,6 @@ import { html, svg, nothing, type TemplateResult } from "lit";
 import type { EntityMap, HomeAssistant } from "../types";
 import { numState } from "./entity-read";
 
-const GATES = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 const MOVE_COLOR = "#4b0082";
 const MOVE_THR_COLOR = "#9467bd";
 const STILL_COLOR = "#274e13";
@@ -28,7 +27,8 @@ export function gateEnergyModel(hass: HomeAssistant, m: EntityMap): GateEnergyMo
     if (id && id in hass.states) present = true;
   };
 
-  const gates: GateRow[] = GATES.map((n) => {
+  const count = m.move_threshold.length;
+  const gates: GateRow[] = Array.from({ length: count }, (_, n) => {
     seen(m.move_energy[n]);
     seen(m.still_energy[n]);
     seen(m.move_threshold[n]);
