@@ -43,6 +43,17 @@ function deviceFromId(
   return { deviceId, base, name: d?.name_by_user || d?.name || base };
 }
 
+function targetDevices(
+  hass: HomeAssistant,
+  config: StrategyConfig
+): Ld2410Device[] {
+  if (config.device_id) {
+    const d = deviceFromId(hass, config.device_id);
+    return d ? [d] : [];
+  }
+  return detectLd2410Devices(hass);
+}
+
 function entitiesCard(title: string, rows: Row[]): Record<string, any> | undefined {
   if (rows.length === 0) return undefined;
   return {
@@ -52,17 +63,16 @@ function entitiesCard(title: string, rows: Row[]): Record<string, any> | undefin
   };
 }
 
-/** Build one sections-view "section" (a grid of cards) for a single device. */
-export function buildDeviceSection(
+/** The cards that make up one device's tuning view. */
+export function buildDeviceCards(
   hass: HomeAssistant,
   dev: Ld2410Device,
   distanceUnit?: string
-): Record<string, any> {
+): Record<string, any>[] {
   const m = entityMapFromBaseName(dev.base);
   const historyIds = historyEntities(m).filter((id) => id in hass.states);
 
-  const cards = [
-    { type: "heading", heading: dev.name },
+  return [
     entitiesCard("LD2410 Controls", presentRows(hass, controlRows(m))),
     entitiesCard("LD2410 Zone Config", presentRows(hass, zoneConfigRows(m))),
     {
@@ -84,18 +94,48 @@ export function buildDeviceSection(
           entities: historyIds,
         }
       : undefined,
-  ].filter(Boolean);
-
-  return { type: "grid", cards };
+  ].filter(Boolean) as Record<string, any>[];
 }
 
-/** Generate one section per LD2410 device (or just the configured one). */
+/** One sections-view "section" (a grid of cards) for a single device. */
+export function buildDeviceSection(
+  hass: HomeAssistant,
+  dev: Ld2410Device,
+  distanceUnit?: string
+): Record<string, any> {
+  return { type: "grid", cards: buildDeviceCards(hass, dev, distanceUnit) };
+}
+
+/** One full view (a sidebar/tab) for a single device. */
+export function deviceView(
+  hass: HomeAssistant,
+  dev: Ld2410Device,
+  distanceUnit?: string
+): Record<string, any> {
+  return {
+    title: dev.name,
+    path: dev.base,
+    type: "sections",
+    sections: [buildDeviceSection(hass, dev, distanceUnit)],
+  };
+}
+
+/** One view (tab) per detected device — the dashboard strategy output. */
+export function generateViews(
+  hass: HomeAssistant,
+  config: StrategyConfig
+): Record<string, any>[] {
+  return targetDevices(hass, config).map((d) =>
+    deviceView(hass, d, config.distance_unit)
+  );
+}
+
+/** All device sections in a single view — used by the view strategy. */
 export function generateSections(
   hass: HomeAssistant,
   config: StrategyConfig
 ): Record<string, any>[] {
-  const devices = config.device_id
-    ? ([deviceFromId(hass, config.device_id)].filter(Boolean) as Ld2410Device[])
-    : detectLd2410Devices(hass);
-  return devices.map((d) => buildDeviceSection(hass, d, config.distance_unit));
+  return targetDevices(hass, config).map((d) =>
+    buildDeviceSection(hass, d, config.distance_unit)
+  );
 }

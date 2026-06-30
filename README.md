@@ -18,9 +18,9 @@ no Plotly.
 
 1. Settings → Dashboards → **Add dashboard**.
 2. Choose **Apollo MSR Tuning** under **Community Dashboards**.
-3. Done — it builds a section per detected MSR device, each with Controls,
+3. Done — it builds **one tab per detected MSR device**, each with Controls,
    Zone/Gate config, the distance + gate-energy charts, target/occupancy, and
-   history. All native cards, fully interactive.
+   history. Click a device's tab to tune it. All native cards, fully interactive.
 
 The strategy (`custom:apollo-ld2410-tuning`) detects every device that exposes a
 `*_radar_engineering_mode` switch and builds a tuning section for it.

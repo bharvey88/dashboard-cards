@@ -1,5 +1,21 @@
 import type { HomeAssistant } from "./types";
-import { generateSections, type StrategyConfig } from "./strategy-core";
+import {
+  generateSections,
+  generateViews,
+  type StrategyConfig,
+} from "./strategy-core";
+
+const EMPTY_VIEW = {
+  title: "MSR Tuning",
+  cards: [
+    {
+      type: "markdown",
+      content:
+        "No Apollo MSR (LD2410) devices found. Make sure your MSR-1/MSR-2 is " +
+        "added to Home Assistant.",
+    },
+  ],
+};
 
 /**
  * View strategy: turns a single view into an auto-generated LD2410 tuning view.
@@ -27,11 +43,10 @@ class ApolloLd2410DashboardStrategy extends HTMLElement {
     config: StrategyConfig,
     hass: HomeAssistant
   ): Promise<Record<string, any>> {
+    const views = generateViews(hass, config);
     return {
       title: "MSR Tuning",
-      views: [
-        { title: "Tuning", type: "sections", sections: generateSections(hass, config) },
-      ],
+      views: views.length ? views : [EMPTY_VIEW],
     };
   }
 }

@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   detectLd2410Devices,
-  buildDeviceSection,
-  generateSections,
+  buildDeviceCards,
+  deviceView,
+  generateViews,
 } from "../src/strategy-core";
 import { entityMapFromBaseName } from "../src/entities";
 import type { HomeAssistant, HassEntity } from "../src/types";
@@ -13,7 +14,6 @@ function deviceHass(): HomeAssistant {
   const m = entityMapFromBaseName(base);
   const states: Record<string, HassEntity> = {};
   const entities: Record<string, { device_id?: string }> = {};
-  // register a representative spread of the device's entities
   const ids = [
     m.engineering_mode!,
     m.radar_timeout!,
@@ -52,44 +52,62 @@ describe("detectLd2410Devices", () => {
   });
 });
 
-describe("buildDeviceSection", () => {
-  const section = buildDeviceSection(
+describe("buildDeviceCards", () => {
+  const cards = buildDeviceCards(
     deviceHass(),
     { deviceId: "dev1", base, name: "MSR-2" },
     "in"
   );
 
-  it("is a grid section starting with a heading", () => {
-    expect(section.type).toBe("grid");
-    expect(section.cards[0]).toMatchObject({ type: "heading", heading: "MSR-2" });
-  });
-
   it("includes both custom chart cards bound to the device base name", () => {
-    const types = section.cards.map((c: any) => c.type);
+    const types = cards.map((c: any) => c.type);
     expect(types).toContain("custom:apollo-ld2410-distance-card");
     expect(types).toContain("custom:apollo-ld2410-gate-energy-card");
-    const distance = section.cards.find(
+    const distance = cards.find(
       (c: any) => c.type === "custom:apollo-ld2410-distance-card"
     );
     expect(distance).toMatchObject({ device_base_name: base, distance_unit: "in" });
   });
 
   it("includes native entities cards for present panels", () => {
-    const titles = section.cards
+    const titles = cards
       .filter((c: any) => c.type === "entities")
       .map((c: any) => c.title);
     expect(titles).toContain("LD2410 Controls");
   });
 });
 
-describe("generateSections", () => {
-  it("auto-detects all devices when no device_id is given", () => {
-    const sections = generateSections(deviceHass(), {});
-    expect(sections).toHaveLength(1);
+describe("deviceView", () => {
+  const view = deviceView(
+    deviceHass(),
+    { deviceId: "dev1", base, name: "Living Room MSR-2" },
+    "in"
+  );
+
+  it("is a sections view titled with the device name", () => {
+    expect(view).toMatchObject({
+      title: "Living Room MSR-2",
+      path: base,
+      type: "sections",
+    });
+    expect(view.sections[0].type).toBe("grid");
+  });
+});
+
+describe("generateViews", () => {
+  it("produces one view (tab) per detected device", () => {
+    const views = generateViews(deviceHass(), {});
+    expect(views).toHaveLength(1);
+    expect(views[0].title).toBe("Living Room MSR-2");
   });
 
   it("restricts to a single device when device_id is given", () => {
-    const sections = generateSections(deviceHass(), { device_id: "dev1" });
-    expect(sections).toHaveLength(1);
+    const views = generateViews(deviceHass(), { device_id: "dev1" });
+    expect(views).toHaveLength(1);
+  });
+
+  it("returns no views when there are no LD2410 devices", () => {
+    const empty: HomeAssistant = { states: {}, entities: {}, devices: {} };
+    expect(generateViews(empty, {})).toHaveLength(0);
   });
 });
