@@ -7,6 +7,10 @@ export interface RadarProfile {
   label: string;
   /** Labels for the two range bars on the distance chart. */
   maxBarLabels: [string, string];
+  /** Labels for the max/min range rows on the Detection Range card. */
+  rangeLabels: [string, string];
+  /** Label for the gate-size / distance-resolution select control. */
+  gateSizeLabel: string;
   /** Apollo wiki page for tuning this radar. */
   wikiUrl: string;
   /** Build the entity map for a device base name. */
@@ -40,6 +44,8 @@ export const LD2410_PROFILE: RadarProfile = {
   key: "ld2410",
   label: "LD2410",
   maxBarLabels: ["Max Move", "Max Still"],
+  rangeLabels: ["Max Move Gate", "Max Still Gate"],
+  gateSizeLabel: "Gate Size",
   wikiUrl: "https://wiki.apolloautomation.com/products/msr2/setup/zones-ha/",
   entityMap(base: string): EntityMap {
     const gates = [0, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -81,6 +87,8 @@ export const LD2412_PROFILE: RadarProfile = {
   key: "ld2412",
   label: "LD2412",
   maxBarLabels: ["Max Gate", "Min Gate"],
+  rangeLabels: ["Max Gate", "Min Gate"],
+  gateSizeLabel: "Distance Resolution",
   wikiUrl:
     "https://wiki.apolloautomation.com/products/rpro1/setup/zones-ha/#ld2412-configuration",
   entityMap(base: string): EntityMap {

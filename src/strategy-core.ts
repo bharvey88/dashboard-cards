@@ -101,7 +101,7 @@ function cardMap(
     controls: entitiesCard(`${label} Controls`, presentRows(hass, controlRows(m))),
     range: entitiesCard(
       `${label} Detection Range`,
-      presentRows(hass, rangeRows(m, dev.profile.maxBarLabels))
+      presentRows(hass, rangeRows(m, dev.profile.rangeLabels, dev.profile.gateSizeLabel))
     ),
     zone: entitiesCard(`${label} Zone Config`, presentRows(hass, zoneConfigRows(m))),
     distance: {

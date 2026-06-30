@@ -28,10 +28,15 @@ describe("row builders", () => {
     expect(zoneConfigRows(m)).toHaveLength(4);
   });
 
-  it("range card has timeout + max move/still gates with profile labels", () => {
-    const rows = rangeRows(m, ["Max Move", "Max Still"]);
+  it("range card has timeout, gate size, and max/min gates (no doubled 'Gate')", () => {
+    const rows = rangeRows(m, ["Max Move Gate", "Max Still Gate"], "Gate Size");
     const names = rows.map((r) => r.name);
-    expect(names).toEqual(["Radar Timeout", "Max Move Gate", "Max Still Gate"]);
+    expect(names).toEqual([
+      "Radar Timeout",
+      "Gate Size",
+      "Max Move Gate",
+      "Max Still Gate",
+    ]);
   });
 
   it("occupancy has target/moving/still + 3 zones = 6 rows", () => {

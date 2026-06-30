@@ -20,12 +20,17 @@ export function controlRows(m: EntityMap): Row[] {
   ];
 }
 
-/** Detection range / timeout — kept separate from the gate-threshold sliders. */
-export function rangeRows(m: EntityMap, maxLabels: [string, string]): Row[] {
+/** Detection range / timeout / gate-size — kept separate from the threshold sliders. */
+export function rangeRows(
+  m: EntityMap,
+  rangeLabels: [string, string],
+  gateSizeLabel: string
+): Row[] {
   return [
     ...row(m.radar_timeout, "Radar Timeout"),
-    ...row(m.max_move_distance, `${maxLabels[0]} Gate`),
-    ...row(m.max_still_distance, `${maxLabels[1]} Gate`),
+    ...row(m.gate_size, gateSizeLabel),
+    ...row(m.max_move_distance, rangeLabels[0]),
+    ...row(m.max_still_distance, rangeLabels[1]),
   ];
 }
 
