@@ -59,6 +59,8 @@ function entitiesCard(title: string, rows: Row[]): Record<string, any> | undefin
   return {
     type: "entities",
     title,
+    // No master header toggle (it would flip every switch in the card at once).
+    show_header_toggle: false,
     entities: rows.map((r) => ({ entity: r.entity, name: r.name })),
   };
 }
@@ -97,16 +99,20 @@ export function buildDeviceCards(
   ].filter(Boolean) as Record<string, any>[];
 }
 
-/** One sections-view "section" (a grid of cards) for a single device. */
-export function buildDeviceSection(
+/** Sections for a single device — one card per section so HA's sections view
+ *  spreads them across the width (multi-column) instead of one tall column. */
+export function buildDeviceSections(
   hass: HomeAssistant,
   dev: Ld2410Device,
   distanceUnit?: string
-): Record<string, any> {
-  return { type: "grid", cards: buildDeviceCards(hass, dev, distanceUnit) };
+): Record<string, any>[] {
+  return buildDeviceCards(hass, dev, distanceUnit).map((card) => ({
+    type: "grid",
+    cards: [card],
+  }));
 }
 
-/** One full view (a sidebar/tab) for a single device. */
+/** One full view (a tab) for a single device. */
 export function deviceView(
   hass: HomeAssistant,
   dev: Ld2410Device,
@@ -116,7 +122,7 @@ export function deviceView(
     title: dev.name,
     path: dev.base,
     type: "sections",
-    sections: [buildDeviceSection(hass, dev, distanceUnit)],
+    sections: buildDeviceSections(hass, dev, distanceUnit),
   };
 }
 
@@ -135,7 +141,7 @@ export function generateSections(
   hass: HomeAssistant,
   config: StrategyConfig
 ): Record<string, any>[] {
-  return targetDevices(hass, config).map((d) =>
-    buildDeviceSection(hass, d, config.distance_unit)
+  return targetDevices(hass, config).flatMap((d) =>
+    buildDeviceSections(hass, d, config.distance_unit)
   );
 }

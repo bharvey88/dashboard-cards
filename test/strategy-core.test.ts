@@ -90,7 +90,14 @@ describe("deviceView", () => {
       path: base,
       type: "sections",
     });
-    expect(view.sections[0].type).toBe("grid");
+  });
+
+  it("uses one card per section so cards spread across the view", () => {
+    expect(view.sections.length).toBeGreaterThan(1);
+    for (const section of view.sections) {
+      expect(section.type).toBe("grid");
+      expect(section.cards).toHaveLength(1);
+    }
   });
 });
 
