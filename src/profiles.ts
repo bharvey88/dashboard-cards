@@ -122,9 +122,9 @@ export const LD2412_PROFILE: RadarProfile = {
       still_threshold: g((p) => `number.${base}_ld2412_g${p}_still_threshold`),
       move_energy: g((p) => `sensor.${base}_ld2412_g${p}_move_energy`),
       still_energy: g((p) => `sensor.${base}_ld2412_g${p}_still_energy`),
-      // LD2412 Moving / Detection distance sensors don't report usable values,
-      // so only the Still distance bar is shown on the chart.
-      still_distance: `sensor.${base}_ld2412_still_distance`,
+      // LD2412 distance sensors don't report usable values, so no distance bars
+      // are shown — the chart is the gate range + min/max gate only.
+      still_distance: undefined,
       moving_distance: undefined,
       detection_distance: undefined,
       radar_target: `binary_sensor.${base}_ld2412_presence`,
