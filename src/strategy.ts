@@ -48,3 +48,21 @@ if (!customElements.get("ll-strategy-dashboard-apollo-ld2410-tuning")) {
     ApolloLd2410DashboardStrategy
   );
 }
+
+// Surface the dashboard strategy in HA's "New Dashboard → Community Dashboards"
+// picker (HA 2026.5+), so users add the tuning dashboard with no YAML.
+(window as any).customStrategies = (window as any).customStrategies || [];
+if (
+  !(window as any).customStrategies.some(
+    (s: { type?: string }) => s.type === "apollo-ld2410-tuning"
+  )
+) {
+  (window as any).customStrategies.push({
+    type: "apollo-ld2410-tuning",
+    strategyType: "dashboard",
+    name: "Apollo MSR Tuning",
+    description:
+      "Auto-built tuning dashboard for Apollo MSR (LD2410) radar devices.",
+    documentationURL: "https://github.com/bharvey88/dashboard-cards",
+  });
+}

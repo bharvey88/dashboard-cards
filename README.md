@@ -1,39 +1,33 @@
-# Apollo LD2410 Tuning
+# Apollo Dashboard Cards
 
-A Home Assistant **integration** that gives Apollo MSR (LD2410 radar) owners a
-one-click tuning dashboard — no YAML, no manual resources, no Streamline, no
-Plotly. Install it, add it, and an **MSR Tuning** dashboard appears in your
-sidebar, auto-built for every MSR device you own.
+Home Assistant Lovelace cards + a dashboard strategy for tuning Apollo
+Automation LD2410 radar devices (MSR-1, MSR-2) — no manual YAML, no Streamline,
+no Plotly.
+
+> Requires **Home Assistant 2026.5 or newer** (uses the Community Dashboards
+> strategy picker).
 
 ## Install (HACS)
 
 1. HACS → ⋮ → **Custom repositories** → add `bharvey88/dashboard-cards`,
-   type **Integration**.
-2. Open **Apollo LD2410 Tuning** → **Download**.
-3. **Restart Home Assistant** (integrations require a restart).
-4. Settings → Devices & Services → **Add Integration** → search
-   **Apollo LD2410 Tuning** → **Submit**.
+   type **Dashboard**.
+2. Open **Apollo Dashboard Cards** → **Download**. Hard-refresh the browser
+   (Ctrl+Shift+R).
 
-That's it. An **MSR Tuning** entry appears in your sidebar with a section per
-MSR device: Controls, Zone/Gate config, the distance + gate-energy charts,
-target/occupancy, and history — all native cards, fully interactive.
+## Add the tuning dashboard (no YAML)
 
-## How it works
-
-The integration bundles a compiled frontend module (the cards + a dashboard
-strategy) and:
-
-- serves and registers that module automatically (no manual HACS "Resources"
-  step), and
-- registers a Lovelace **strategy dashboard** in the sidebar — the same
-  mechanism Home Assistant's built-in Energy dashboard uses.
+1. Settings → Dashboards → **Add dashboard**.
+2. Choose **Apollo MSR Tuning** under **Community Dashboards**.
+3. Done — it builds a section per detected MSR device, each with Controls,
+   Zone/Gate config, the distance + gate-energy charts, target/occupancy, and
+   history. All native cards, fully interactive.
 
 The strategy (`custom:apollo-ld2410-tuning`) detects every device that exposes a
 `*_radar_engineering_mode` switch and builds a tuning section for it.
 
 ## Individual cards
 
-The two charts are also normal Lovelace cards you can place on any dashboard:
+The two charts are also normal Lovelace cards you can add to any dashboard:
 
 ```yaml
 type: custom:apollo-ld2410-distance-card

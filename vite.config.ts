@@ -1,11 +1,8 @@
 import { defineConfig } from "vite";
 
-// The bundle is shipped *inside* the integration, which serves it as a frontend
-// module. Build straight into the integration's frontend directory.
 export default defineConfig({
   build: {
-    outDir: "custom_components/apollo_ld2410_tuning/frontend",
-    emptyOutDir: true,
+    outDir: "dist",
     lib: {
       entry: "src/index.ts",
       formats: ["es"],
