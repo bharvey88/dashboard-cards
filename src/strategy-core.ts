@@ -182,13 +182,12 @@ export function buildDeviceSections(
   distanceUnit?: string
 ): Record<string, any>[] {
   const c = cardMap(hass, dev, distanceUnit);
-  // Move/Still thresholds get their own adjacent columns (3 & 4), aligned at the
-  // top so you can compare them gate-by-gate. Everything else packs into 1 & 2.
+  // Four columns: controls | distance+config | gate-energy+move | history+still.
   const columns: (Record<string, any> | undefined)[][] = [
-    [c.help, c.controls, c.zone, c.occupancy],
-    [c.distance, c.range, c.rangeNote, c.gateEnergy, c.history],
-    [c.moveThr, c.gateNote],
-    [c.stillThr],
+    [c.help, c.controls, c.zone],
+    [c.distance, c.range, c.rangeNote, c.occupancy],
+    [c.gateEnergy, c.moveThr, c.gateNote],
+    [c.history, c.stillThr],
   ];
   return columns
     .map((col) => col.filter(Boolean) as Record<string, any>[])

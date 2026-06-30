@@ -1,4 +1,4 @@
-export const CARD_VERSION = "0.6.6";
+export const CARD_VERSION = "0.6.7";
 
 import "./cards/distance-card";
 import "./cards/gate-energy-card";
