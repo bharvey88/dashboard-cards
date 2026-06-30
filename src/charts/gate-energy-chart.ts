@@ -88,12 +88,18 @@ export function renderGateEnergyChart(
       <text x=${cx} y=${HEIGHT - 7} font-size="13" text-anchor="middle"
         fill="var(--secondary-text-color)">G${g.index}</text>`);
     if (model.engineeringMode && g.moveThr !== undefined) {
-      els.push(svg`<line x1=${moveX} y1=${yFor(g.moveThr)} x2=${moveX + barW}
-        y2=${yFor(g.moveThr)} stroke=${MOVE_THR_COLOR} stroke-width="2"></line>`);
+      const ty = yFor(g.moveThr);
+      const tx = moveX + barW / 2;
+      // right-pointing triangle = move threshold
+      els.push(svg`<path d="M ${tx - 5} ${ty - 5} L ${tx - 5} ${ty + 5} L ${tx + 5} ${ty} Z"
+        fill=${MOVE_THR_COLOR}></path>`);
     }
     if (model.engineeringMode && g.stillThr !== undefined) {
-      els.push(svg`<line x1=${stillX} y1=${yFor(g.stillThr)} x2=${stillX + barW}
-        y2=${yFor(g.stillThr)} stroke=${STILL_THR_COLOR} stroke-width="2"></line>`);
+      const ty = yFor(g.stillThr);
+      const tx = stillX + barW / 2;
+      // left-pointing triangle = still threshold
+      els.push(svg`<path d="M ${tx + 5} ${ty - 5} L ${tx + 5} ${ty + 5} L ${tx - 5} ${ty} Z"
+        fill=${STILL_THR_COLOR}></path>`);
     }
     return els;
   });
@@ -123,8 +129,10 @@ export function renderGateEnergyChart(
       ${gridlines} ${bars} ${overlay}
     </svg>
     <div class="chart-legend">
-      <span style="color:${MOVE_COLOR}">■</span> Move energy
-      <span style="color:${STILL_COLOR}">■</span> Still energy
+      <span><span style="color:${MOVE_COLOR}">■</span> Move energy</span>
+      <span><span style="color:${STILL_COLOR}">■</span> Still energy</span>
+      <span><span style="color:${MOVE_THR_COLOR}">▶</span> Move threshold</span>
+      <span><span style="color:${STILL_THR_COLOR}">◀</span> Still threshold</span>
     </div>
   `;
 }

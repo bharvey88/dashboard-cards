@@ -203,16 +203,21 @@ export function renderDistanceChart(
       text-anchor="end" fill=${TXT2}>${rowLabel(r)}</text>`;
 
     if (r.kind === "zones") {
-      const segs = model.zones.map((z) => {
+      const segs = model.zones.map((z, idx) => {
         const x0 = x(z.start);
         const x1 = x(z.end);
-        const cx = Math.max(x0 + 10, x1 - 13);
+        const w = x1 - x0;
+        // Label left, occupancy circle right; hide the label if the zone is too
+        // narrow to fit both without overlapping.
+        const showLabel = w >= 40;
         return svg`
-          <rect x=${x0} y=${y} width=${Math.max(1, x1 - x0)} height=${BAR_H}
+          <rect x=${x0} y=${y} width=${Math.max(1, w)} height=${BAR_H}
             rx="4" fill=${z.color} opacity=${z.occupied ? 0.95 : 0.6}></rect>
-          <text x=${(x0 + x1) / 2} y=${y + MID} font-size="14" font-weight="600"
-            text-anchor="middle" fill="#fff">${z.label}</text>
-          <circle cx=${cx} cy=${y + BAR_H / 2} r="6"
+          ${showLabel
+            ? svg`<text x=${x0 + 6} y=${y + MID} font-size="13" font-weight="600"
+                fill="#fff">Z${idx + 1}</text>`
+            : nothing}
+          <circle cx=${x1 - 11} cy=${y + BAR_H / 2} r="5"
             fill=${z.occupied ? "#fff" : "none"} stroke="#fff" stroke-width="2"></circle>`;
       });
       return svg`${label}${segs}`;

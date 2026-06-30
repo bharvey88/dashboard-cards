@@ -40,8 +40,9 @@ export class ApolloLd2410GateEnergyCard extends LitElement {
       font-size: 0.8em;
       color: var(--secondary-text-color);
       display: flex;
-      gap: 12px;
-      margin-top: 4px;
+      flex-wrap: wrap;
+      gap: 4px 14px;
+      margin-top: 6px;
     }
   `;
 }
