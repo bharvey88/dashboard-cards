@@ -183,9 +183,14 @@ export function buildDeviceSections(
 ): Record<string, any>[] {
   const c = cardMap(hass, dev, distanceUnit);
   // Four columns: controls | distance+config | gate-energy+move | history+still.
+  // LD2412 has no Zone Config, so column 1 is short — put occupancy there instead
+  // of column 2 to balance it.
+  const col1 = [c.help, c.controls, c.zone];
+  const col2: (Record<string, any> | undefined)[] = [c.distance, c.range, c.rangeNote];
+  (c.zone ? col2 : col1).push(c.occupancy);
   const columns: (Record<string, any> | undefined)[][] = [
-    [c.help, c.controls, c.zone],
-    [c.distance, c.range, c.rangeNote, c.occupancy],
+    col1,
+    col2,
     [c.gateEnergy, c.moveThr, c.gateNote],
     [c.history, c.stillThr],
   ];
